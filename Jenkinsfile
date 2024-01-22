@@ -7,7 +7,24 @@ def account = ""
 def validInstances = []
 
 pipeline {
-
+    parameters {
+        choice(
+            name: 'Environment',
+            choices: ['rod_aws','rod_aws_2'],
+        )
+        choice( 
+            name: 'Region',
+            choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
+        )
+        string(
+            name: 'InstanceNames',
+            defaultValue: 'TEST1,TEST2', 
+        )
+        string(
+            name: 'TicketNumber',
+            defaultValue: 'SCTASK00000000',
+        )
+    }
     agent any
 
     stages {
@@ -33,8 +50,6 @@ pipeline {
                     }
 
                     echo "Successfully retrieved environment details for environment \"${environment}\""
-
-                    echo "TEST"
                 }
             }
 
@@ -46,7 +61,7 @@ pipeline {
                         withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
                             
                             // removes whitespaces from instance names
-                            def instanceNames = params.InstanceName.replaceAll("\\s+", "")
+                            def instanceNames = params.InstanceNames.replaceAll("\\s+", "")
                             
                             def awsCliCommand = "aws ec2 describe-instances --filters \"Name=tag:Name,Values=${instanceNames}\" --region ${region} --output json"
 
