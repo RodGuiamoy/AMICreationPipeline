@@ -33,6 +33,8 @@ pipeline {
                     }
 
                     echo "Successfully retrieved environment details for environment \"${environment}\""
+
+                    echo "TEST"
                 }
             }
 
