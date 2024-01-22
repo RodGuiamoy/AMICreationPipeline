@@ -18,7 +18,7 @@ pipeline {
         )
         string(
             name: 'InstanceNames',
-            defaultValue: 'TEST1,TEST2', 
+            defaultValue: 'TEST1,TEST2,TEST3', 
         )
         string(
             name: 'TicketNumber',
