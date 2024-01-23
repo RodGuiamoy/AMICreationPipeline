@@ -128,14 +128,14 @@ pipeline {
                 script {
                     echo "Will create scheduled task"
 
-                    def taskDate = '1/25/2024'
-                    def taskTime = '07:43'
-                    def taskName = 'Test Task 3'
+                    def taskDate = '1/24/2024'
+                    def taskTime = '07:48'
+                    def taskName = 'Test Task'
                     def dateTime = taskDate + ' ' + taskTime
 
                     powershell """
                     # Define the action
-                    \$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument "-Command `"'Hello World' > C:\\hello.txt'`""
+                    \$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument "-Command `"'Hello World' > C:\\hello.txt`""
 
                     # Define the trigger
                     \$trigger = New-ScheduledTaskTrigger -At "$dateTime" -Once
