@@ -1,5 +1,6 @@
 import java.util.UUID
 
+def environment = ""
 def region = ""
 def role = ""
 def awsCredential = ""
@@ -43,7 +44,7 @@ pipeline {
         stage('GetEnvironmentDetails') {
             steps {
                 script {
-                    def environment = params.Environment
+                    environment = params.Environment
                     
                     region = params.Region
                     role = 'AMICreationRole'
@@ -127,8 +128,19 @@ pipeline {
                 script {
                     echo "Will create scheduled task"
 
+                    def taskDate = '2/25/2024'
+                    def taskTime = '10:00AM'
+                    def taskName = 'Test Task'
+
                     powershell """
-                    Write-Host $account
+                    # Define the action
+                    \$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Command 'Write-Host "Hello World!"'
+
+                    # Define the trigger
+                    \$trigger = New-ScheduledTaskTrigger -At $taskDate -At $taskTime -Once
+
+                    # Register the task
+                    Register-ScheduledTask -Action \$action -Trigger \$trigger -TaskName $taskName
                     """
                 }
             }
