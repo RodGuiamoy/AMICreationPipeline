@@ -28,6 +28,14 @@ pipeline {
             name: 'Mode',
             choices: ['Adhoc','Scheduled'],
         )
+        string(
+            name: 'Date',
+            defaultValue: 'MM/DD/YYYY',
+        )
+        string(
+            name: 'Time',
+            defaultValue: 'HH:MM',
+        )
     }
     agent any
 
@@ -118,6 +126,10 @@ pipeline {
             steps {
                 script {
                     echo "Will create scheduled task"
+
+                    powershell '''
+                        Write-Host "Hello world!"
+                    '''
                 }
             }
         }
