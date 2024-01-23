@@ -127,9 +127,9 @@ pipeline {
                 script {
                     echo "Will create scheduled task"
 
-                    powershell '''
-                        Write-Host "Hello world!"
-                    '''
+                    powershell """
+                    Write-Host $account
+                    """
                 }
             }
         }
