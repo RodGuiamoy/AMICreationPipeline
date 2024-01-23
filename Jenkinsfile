@@ -129,8 +129,8 @@ pipeline {
                     echo "Will create scheduled task"
 
                     def taskDate = '1/25/2024'
-                    def taskTime = '07:39'
-                    def taskName = 'Test Task 2'
+                    def taskTime = '07:43'
+                    def taskName = 'Test Task 3'
                     def dateTime = taskDate + ' ' + taskTime
 
                     powershell """
@@ -141,7 +141,7 @@ pipeline {
                     \$trigger = New-ScheduledTaskTrigger -At "$dateTime" -Once
 
                     # Register the task
-                    Register-ScheduledTask -Action \$action -Trigger \$trigger -TaskName "$taskName"
+                    Register-ScheduledTask -Action \$action -Trigger \$trigger -TaskName "$taskName" -User "System"
                     """
                 }
             }
