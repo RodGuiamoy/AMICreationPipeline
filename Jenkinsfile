@@ -138,7 +138,7 @@ pipeline {
                     \$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument "-Command `"Write-Host 'Hello World!'`""
 
                     # Define the trigger
-                    \$trigger = New-ScheduledTaskTrigger -At $dateTime -Once
+                    \$trigger = New-ScheduledTaskTrigger -At "$dateTime" -Once
 
                     # Register the task
                     Register-ScheduledTask -Action \$action -Trigger \$trigger -TaskName $taskName
