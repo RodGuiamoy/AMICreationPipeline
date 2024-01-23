@@ -117,7 +117,7 @@ pipeline {
             }
             steps {
                 script {
-                    echo "Will not create scheduled task"
+                    echo "Will create scheduled task"
                 }
             }
         }
