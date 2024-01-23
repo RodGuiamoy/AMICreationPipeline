@@ -128,7 +128,7 @@ pipeline {
                 script {
                     echo "Will create scheduled task"
 
-                    def taskDate = '2/25/2024'
+                    def taskDate = '1/25/2024'
                     def taskTime = '07:39'
                     def taskName = 'Test Task 2'
                     def dateTime = taskDate + ' ' + taskTime
