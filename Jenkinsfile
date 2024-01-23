@@ -129,8 +129,8 @@ pipeline {
                     echo "Will create scheduled task"
 
                     def taskDate = '2/25/2024'
-                    def taskTime = '07:35'
-                    def taskName = 'Test Task'
+                    def taskTime = '07:37'
+                    def taskName = 'Test Task 2'
                     def dateTime = taskDate + ' ' + taskTime
 
                     powershell """
