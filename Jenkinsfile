@@ -129,13 +129,15 @@ pipeline {
                     echo "Will create scheduled task"
 
                     def taskDate = '1/24/2024'
-                    def taskTime = '07:48'
+                    def taskTime = '08:01'
                     def taskName = 'Test Task'
                     def dateTime = taskDate + ' ' + taskTime
 
                     powershell """
                     # Define the action
-                    \$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument "-Command `"'Hello World' > C:\\hello.txt`""
+                    # \$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument "-Command `"'Hello World' > C:\\hello.txt`""
+
+                    \$action = New-ScheduledTaskAction -Execute 'java -jar "C:\\Program Files\\Jenkins\\jenkins-cli.jar" -ssh -user admin -i "C:\\Users\\JanRudolfGuiamoy\\.ssh\\id_rsa" -s http://localhost:8080 build AMICreationPipeline -p Region=ap-southeast-1 -s -v'
 
                     # Define the trigger
                     \$trigger = New-ScheduledTaskTrigger -At "$dateTime" -Once
