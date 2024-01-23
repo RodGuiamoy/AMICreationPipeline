@@ -24,6 +24,10 @@ pipeline {
             name: 'TicketNumber',
             defaultValue: 'SCTASK00000000',
         )
+        choice( 
+            name: 'Mode',
+            choices: ['Adhoc','Scheduled'],
+        )
     }
     agent any
 
@@ -104,6 +108,16 @@ pipeline {
                             }
                         }
                     }
+                }
+            }
+        }
+        stage('PreWork') {
+            when {
+                expression { params.Mode == 'Scheduled'}
+            }
+            steps {
+                script {
+                    echo "Will not create scheduled task"
                 }
             }
         }
