@@ -205,7 +205,9 @@ pipeline {
 }
 
 def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
-    def job = Hudson.instance.getJob('AMICreationPipeline')
+    // def job = Hudson.instance.getJob('AMICreationPipeline')
+    def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
+
     if (job == null) {
         throw new IllegalStateException("Job not found: AMICreationPipeline")
     }
