@@ -134,10 +134,10 @@ pipeline {
                     def hiddenParamUuidStr = hiddenParamUuid.toString()
 
                      // Specify the future date and time in military time (24-hour format)
-                    String futureDateTime = "2024-02-01 23:00" // Format: YYYY-MM-DD HH:MM:SS
+                    String futureDateTime = "01/25/2024 14:30" // Format: YYYY-MM-DD HH:MM:SS
 
                     // Parse the future date and time
-                    def dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
+                    def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
                     Date futureDate = dateFormat.parse(futureDateTime)
 
                     // Get the current date and time
