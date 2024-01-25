@@ -4,7 +4,7 @@ import hudson.model.*;
 def environment = ""
 def region = ""
 
-def delaySeconds = 0
+int delaySeconds = 0
 def account = ""
 def role = ""
 def validInstances = []
