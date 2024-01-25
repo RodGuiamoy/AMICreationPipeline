@@ -1,21 +1,7 @@
 import java.util.UUID
 import hudson.model.*;
 
-def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
-    def job = Hudson.instance.getJob('AMICreationPipeline')
-    if (job == null) {
-        throw new IllegalStateException("Job not found: AMICreationPipeline")
-    }
 
-    def params = [
-        new StringParameterValue('Environment', environment),
-        new StringParameterValue('Region', region),
-        new StringParameterValue('InstanceNames', instanceNames),
-        new StringParameterValue('TicketNumber', ticketNumber),
-        new StringParameterValue('HiddenParam', hiddenParam)
-    ]
-    def future = job.scheduleBuild2(100, new ParametersAction(params))
-}
 
 def environment = ""
 def region = ""
@@ -216,4 +202,20 @@ pipeline {
             }
         }
     }
+}
+
+def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
+    def job = Hudson.instance.getJob('AMICreationPipeline')
+    if (job == null) {
+        throw new IllegalStateException("Job not found: AMICreationPipeline")
+    }
+
+    def params = [
+        new StringParameterValue('Environment', environment),
+        new StringParameterValue('Region', region),
+        new StringParameterValue('InstanceNames', instanceNames),
+        new StringParameterValue('TicketNumber', ticketNumber),
+        new StringParameterValue('HiddenParam', hiddenParam)
+    ]
+    def future = job.scheduleBuild2(100, new ParametersAction(params))
 }
