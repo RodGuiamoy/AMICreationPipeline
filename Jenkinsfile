@@ -1,5 +1,21 @@
 import java.util.UUID
 
+def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
+    def job = Hudson.instance.getJob('AMICreationPipeline')
+    if (job == null) {
+        throw new IllegalStateException("Job not found: AMICreationPipeline")
+    }
+
+    def params = [
+        new StringParameterValue('Environment', environment),
+        new StringParameterValue('Region', region),
+        new StringParameterValue('InstanceNames', instanceNames),
+        new StringParameterValue('TicketNumber', ticketNumber),
+        new StringParameterValue('HiddenParam', hiddenParam)
+    ]
+    def future = job.scheduleBuild2(100, new ParametersAction(params))
+}
+
 def environment = ""
 def region = ""
 def role = ""
@@ -128,21 +144,7 @@ pipeline {
                 script {
                     echo "Will create scheduled Jenkins build."
 
-                    def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
-                        def job = Hudson.instance.getJob('AMICreationPipeline')
-                        if (job == null) {
-                            throw new IllegalStateException("Job not found: AMICreationPipeline")
-                        }
-
-                        def params = [
-                            new StringParameterValue('Environment', environment),
-                            new StringParameterValue('Region', region),
-                            new StringParameterValue('InstanceNames', instanceNames),
-                            new StringParameterValue('TicketNumber', ticketNumber),
-                            new StringParameterValue('HiddenParam', hiddenParam)
-                        ]
-                        def future = job.scheduleBuild2(100, new ParametersAction(params))
-                    }
+                    
 
                     // Example usage
                     triggerBuild('rod_aws', 'us-east-1', 'TEST1,TEST2,TEST3', 'SCTASK00000000', 'test')
