@@ -134,7 +134,7 @@ pipeline {
                     def scheduledBuildId = scheduledBuildId.toString()
 
                      // Specify the future date and time in military time (24-hour format)
-                    String futureDateTime = "01/25/2024 14:30" // Format: YYYY-MM-DD HH:MM:SS
+                    String futureDateTime = "01/25/2024 14:25" //what if datetime is in a past date?
 
                     // Parse the future date and time
                     def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
@@ -148,6 +148,8 @@ pipeline {
 
                     // Convert the difference to seconds
                     int differenceInSeconds = differenceInMillis / 1000
+
+
                     
                     // Example usage
                     setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, differenceInSeconds)
