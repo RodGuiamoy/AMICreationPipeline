@@ -132,7 +132,7 @@ pipeline {
                     echo "Will create scheduled Jenkins build."
 
                     // Example usage
-                    triggerBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', 'test')
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', 'test')
                     
                 }
             }
@@ -205,7 +205,7 @@ pipeline {
     }
 }
 
-def triggerBuild(environment, region, instanceNames, ticketNumber, mode, hiddenParam) {
+def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, hiddenParam) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
