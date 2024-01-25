@@ -1,4 +1,5 @@
 import java.util.UUID
+import hudson.model.*;
 
 def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
     def job = Hudson.instance.getJob('AMICreationPipeline')
