@@ -131,7 +131,7 @@ pipeline {
 
                     // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
                     def scheduledBuildId = UUID.randomUUID()
-                    def scheduledBuildId = scheduledBuildId.toString()
+                    scheduledBuildId = scheduledBuildId.toString()
 
                      // Specify the future date and time in military time (24-hour format)
                     String futureDateTime = "01/25/2024 14:25" //what if datetime is in a past date?
