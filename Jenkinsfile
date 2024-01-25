@@ -149,7 +149,7 @@ pipeline {
                     // Convert the difference to seconds
                     int differenceInSeconds = differenceInMillis / 1000
 
-
+                    echo "${differenceInSeconds}"
                     
                     // Example usage
                     setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, differenceInSeconds)
