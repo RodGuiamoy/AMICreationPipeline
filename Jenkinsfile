@@ -130,8 +130,8 @@ pipeline {
                     echo "Will create scheduled Jenkins build."
 
                     // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
-                    def hiddenParamUuid = UUID.randomUUID()
-                    def hiddenParamUuidStr = hiddenParamUuid.toString()
+                    def scheduledBuildId = UUID.randomUUID()
+                    def scheduledBuildId = scheduledBuildId.toString()
 
                      // Specify the future date and time in military time (24-hour format)
                     String futureDateTime = "01/25/2024 14:30" // Format: YYYY-MM-DD HH:MM:SS
@@ -150,7 +150,7 @@ pipeline {
                     int differenceInSeconds = differenceInMillis / 1000
                     
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', hiddenParamUuidStr, differenceInSeconds)
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, differenceInSeconds)
                     
                 }
             }
@@ -223,7 +223,7 @@ pipeline {
     }
 }
 
-def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, hiddenParam, delaySeconds) {
+def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, delaySeconds) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
@@ -237,7 +237,7 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, hidd
         new StringParameterValue('InstanceNames', instanceNames),
         new StringParameterValue('TicketNumber', ticketNumber),
         new StringParameterValue('Mode', mode),
-        new StringParameterValue('HiddenParam', hiddenParam)
+        new StringParameterValue('ScheduledBuildId', scheduledBuildId)
     ]
 
     def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
