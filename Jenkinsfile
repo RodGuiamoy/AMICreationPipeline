@@ -134,9 +134,11 @@ pipeline {
                     // we set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
                     def hiddenParamUuid = UUID.randomUUID()
                     def hiddenParamUuidStr = hiddenParamUuid.toString()
+
+                    def delaySeconds = 100
                     
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', hiddenParamUuidStr)
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', hiddenParamUuidStr, delaySeconds)
                     
                 }
             }
@@ -209,7 +211,7 @@ pipeline {
     }
 }
 
-def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, hiddenParam) {
+def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, hiddenParam, delaySeconds) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
@@ -226,5 +228,5 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, hidd
         new StringParameterValue('HiddenParam', hiddenParam)
     ]
 
-    def future = job.scheduleBuild2(100, new ParametersAction(params))
+    def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
 }
