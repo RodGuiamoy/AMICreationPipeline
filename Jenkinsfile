@@ -1,8 +1,6 @@
 import java.util.UUID
 import hudson.model.*;
 
-
-
 def environment = ""
 def region = ""
 def role = ""
@@ -131,14 +129,28 @@ pipeline {
                 script {
                     echo "Will create scheduled Jenkins build."
 
-                    // we set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
+                    // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
                     def hiddenParamUuid = UUID.randomUUID()
                     def hiddenParamUuidStr = hiddenParamUuid.toString()
 
-                    def delaySeconds = 100
+                     // Specify the future date and time in military time (24-hour format)
+                    String futureDateTime = "2024-02-01 23:00" // Format: YYYY-MM-DD HH:MM:SS
+
+                    // Parse the future date and time
+                    def dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
+                    Date futureDate = dateFormat.parse(futureDateTime)
+
+                    // Get the current date and time
+                    Date currentDate = new Date()
+
+                    // Calculate the difference in milliseconds
+                    long differenceInMillis = futureDate.time - currentDate.time
+
+                    // Convert the difference to seconds
+                    long differenceInSeconds = differenceInMillis / 1000
                     
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', hiddenParamUuidStr, delaySeconds)
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', hiddenParamUuidStr, differenceInSeconds)
                     
                 }
             }
