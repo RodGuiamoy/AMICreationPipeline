@@ -147,7 +147,7 @@ pipeline {
                     long differenceInMillis = futureDate.time - currentDate.time
 
                     // Convert the difference to seconds
-                    long differenceInSeconds = differenceInMillis / 1000
+                    int differenceInSeconds = differenceInMillis / 1000
                     
                     // Example usage
                     setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', hiddenParamUuidStr, differenceInSeconds)
