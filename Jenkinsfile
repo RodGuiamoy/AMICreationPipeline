@@ -123,7 +123,7 @@ pipeline {
         //         }
         //     }
         // }
-        stage('PreWork') {
+        stage('ScheduleBuild') {
             when {
                 expression { params.Mode == 'Scheduled'}
             }
@@ -134,7 +134,7 @@ pipeline {
                     
 
                     // Example usage
-                    triggerBuild('rod_aws', 'us-east-1', 'TEST1,TEST2,TEST3', 'SCTASK00000000', 'test')
+                    triggerBuild(environment, region, params.InstanceNames, params.TicketNumber, 'test')
                     
                 }
             }
@@ -219,5 +219,6 @@ def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) 
         new StringParameterValue('TicketNumber', ticketNumber),
         new StringParameterValue('HiddenParam', hiddenParam)
     ]
+
     def future = job.scheduleBuild2(100, new ParametersAction(params))
 }
