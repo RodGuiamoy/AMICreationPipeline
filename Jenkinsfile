@@ -3,9 +3,10 @@ import hudson.model.*;
 
 def environment = ""
 def region = ""
-def role = ""
-def awsCredential = ""
+
+def delaySeconds = 0
 def account = ""
+def role = ""
 def validInstances = []
 
 pipeline {
@@ -42,7 +43,7 @@ pipeline {
     agent any
 
     stages {
-        stage('GetEnvironmentDetails') {
+        stage('ValidateParams') {
             steps {
                 script {
                     environment = params.Environment
@@ -52,11 +53,9 @@ pipeline {
                     
                     switch (environment) {
                         case 'rod_aws':
-                            awsCredential = 'rod_aws'
                             account = '554249804926'
                             break
                         case 'rod_aws_2':
-                            awsCredential = 'rod_aws_2'
                             account = '992382788789'
                             break
                         default:
@@ -64,6 +63,28 @@ pipeline {
                     }
 
                     echo "Successfully retrieved environment details for environment \"${environment}\""
+
+
+                     // Specify the future date and time in military time (24-hour format)
+                    String futureDateTime = "01/25/2024 14:25" //what if datetime is in a past date?
+
+                    // Parse the future date and time
+                    def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
+                    Date futureDate = dateFormat.parse(futureDateTime)
+
+                    // Get the current date and time
+                    Date currentDate = new Date()
+
+                    // Calculate the difference in milliseconds
+                    long differenceInMillis = futureDate.time - currentDate.time
+
+                    // Convert the difference to seconds
+                    int delaySeconds = differenceInMillis / 1000
+
+                    if (delaySeconds < 0) {
+                        error ("Date must be in a future date.")
+                    }
+
                 }
             }
 
@@ -132,27 +153,9 @@ pipeline {
                     // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
                     def scheduledBuildId = UUID.randomUUID()
                     scheduledBuildId = scheduledBuildId.toString()
-
-                     // Specify the future date and time in military time (24-hour format)
-                    String futureDateTime = "01/25/2024 14:25" //what if datetime is in a past date?
-
-                    // Parse the future date and time
-                    def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-                    Date futureDate = dateFormat.parse(futureDateTime)
-
-                    // Get the current date and time
-                    Date currentDate = new Date()
-
-                    // Calculate the difference in milliseconds
-                    long differenceInMillis = futureDate.time - currentDate.time
-
-                    // Convert the difference to seconds
-                    int differenceInSeconds = differenceInMillis / 1000
-
-                    echo "${differenceInSeconds}"
                     
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, differenceInSeconds)
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, delaySeconds)
                     
                 }
             }
