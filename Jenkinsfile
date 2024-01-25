@@ -79,7 +79,7 @@ pipeline {
                     long differenceInMillis = futureDate.time - currentDate.time
 
                     // Convert the difference to seconds
-                    int delaySeconds = differenceInMillis / 1000
+                    delaySeconds = differenceInMillis / 1000
 
                     if (delaySeconds < 0) {
                         error ("Date must be in a future date.")
