@@ -131,8 +131,12 @@ pipeline {
                 script {
                     echo "Will create scheduled Jenkins build."
 
+                    // we set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
+                    def hiddenParamUuid = UUID.randomUUID()
+                    def hiddenParamUuidStr = uuid.toString()
+                    
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', 'test')
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', hiddenParamUuidStr)
                     
                 }
             }
