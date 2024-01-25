@@ -123,7 +123,7 @@ pipeline {
         //         }
         //     }
         // }
-        stage('ScheduleBuild') {
+        stage('ScheduleAMICreation') {
             when {
                 expression { params.Mode == 'Scheduled'}
             }
@@ -140,6 +140,9 @@ pipeline {
             }
         }
         stage('CreateAMI') {
+            when {
+                expression { params.Mode == 'Adhoc'}
+            }
             steps {
                 script {
 
@@ -204,7 +207,7 @@ pipeline {
     }
 }
 
-def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
+def triggerBuild(environment, region, instanceNames, ticketNumber, mode, hiddenParam) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
@@ -217,6 +220,7 @@ def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) 
         new StringParameterValue('Region', region),
         new StringParameterValue('InstanceNames', instanceNames),
         new StringParameterValue('TicketNumber', ticketNumber),
+        new StringParameterValue('Mode', mode),
         new StringParameterValue('HiddenParam', hiddenParam)
     ]
 
