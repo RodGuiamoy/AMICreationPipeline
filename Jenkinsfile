@@ -126,25 +126,27 @@ pipeline {
             }
             steps {
                 script {
-                    echo "Will create scheduled task"
+                    echo "Will create scheduled Jenkins build."
 
-                    def taskDate = '1/24/2024'
-                    def taskTime = '08:08'
-                    def taskName = 'Test Task'
-                    def dateTime = taskDate + ' ' + taskTime
+                    def triggerBuild(environment, region, instanceNames, ticketNumber, hiddenParam) {
+                        def job = Hudson.instance.getJob('AMICreationPipeline')
+                        if (job == null) {
+                            throw new IllegalStateException("Job not found: AMICreationPipeline")
+                        }
 
-                    powershell """
-                    # Define the action
-                    # \$action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument "-Command `"'Hello World' > C:\\hello.txt`""
+                        def params = [
+                            new StringParameterValue('Environment', environment),
+                            new StringParameterValue('Region', region),
+                            new StringParameterValue('InstanceNames', instanceNames),
+                            new StringParameterValue('TicketNumber', ticketNumber),
+                            new StringParameterValue('HiddenParam', hiddenParam)
+                        ]
+                        def future = job.scheduleBuild2(100, new ParametersAction(params))
+                    }
 
-                    \$action = New-ScheduledTaskAction -Execute 'java' -Argument '-jar "C:\\Program Files\\Jenkins\\jenkins-cli.jar" -ssh -user admin -i "C:\\Users\\JanRudolfGuiamoy\\.ssh\\id_rsa" -s http://localhost:8080 build AMICreationPipeline -p Region=ap-southeast-1 -s -v'
-
-                    # Define the trigger
-                    \$trigger = New-ScheduledTaskTrigger -At "$dateTime" -Once
-
-                    # Register the task
-                    Register-ScheduledTask -Action \$action -Trigger \$trigger -TaskName "$taskName" -User "System"
-                    """
+                    // Example usage
+                    triggerBuild('rod_aws', 'us-east-1', 'TEST1,TEST2,TEST3', 'SCTASK00000000', 'test')
+                    
                 }
             }
         }
