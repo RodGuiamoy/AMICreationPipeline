@@ -131,10 +131,8 @@ pipeline {
                 script {
                     echo "Will create scheduled Jenkins build."
 
-                    
-
                     // Example usage
-                    triggerBuild(environment, region, params.InstanceNames, params.TicketNumber, 'test')
+                    triggerBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', 'test')
                     
                 }
             }
