@@ -141,7 +141,7 @@ pipeline {
                     }
                     catch (ex) {
                         // Handle the error without failing the build
-                        error("Unable to parse DateTime ${executionDateTime}.")
+                        error("Unable to parse DateTime ${executionDateTimeStr}.")
                     }
                     
                     // Get the current date and time
