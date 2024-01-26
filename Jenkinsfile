@@ -142,10 +142,12 @@ pipeline {
                     // String futureDateTime = "01/27/2024 14:25"
                     executionDateTimeStr = params.Date + ' ' + params.Time
 
+                    Date executionDate
+                    
                     try {
                         // Parse the future date and time
                         def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-                        Date executionDate = dateFormat.parse(executionDateTimeStr)
+                        executionDate = dateFormat.parse(executionDateTimeStr)
                     }
                     catch (ex) {
                         // Handle the error without failing the build
