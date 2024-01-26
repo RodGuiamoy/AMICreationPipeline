@@ -70,59 +70,67 @@ pipeline {
             }
 
         }
-        // stage('ValidateEC2') {
-        //     steps {
-        //         script {
-        //             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
-        //                 withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
+        stage('ValidateEC2') {
+            steps {
+                script {
+                    // withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
+                    //     withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
                             
-        //                     // removes whitespaces from instance names
-        //                     def instanceNames = params.InstanceNames.replaceAll("\\s+", "")
+                    //         // removes whitespaces from instance names
+                    //         def instanceNames = params.InstanceNames.replaceAll("\\s+", "")
                             
-        //                     def awsCliCommand = "aws ec2 describe-instances --filters \"Name=tag:Name,Values=${instanceNames}\" --region ${region} --output json"
+                    //         def awsCliCommand = "aws ec2 describe-instances --filters \"Name=tag:Name,Values=${instanceNames}\" --region ${region} --output json"
 
-        //                     // Executes the AWS CLI command and does some post-processing.
-        //                     // The output includes the command at the top and can't be parsed so we have to drop the first line
-        //                     def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
-        //                     cliOutput = cliOutput.readLines().drop(1).join("\n")
+                    //         // Executes the AWS CLI command and does some post-processing.
+                    //         // The output includes the command at the top and can't be parsed so we have to drop the first line
+                    //         def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
+                    //         cliOutput = cliOutput.readLines().drop(1).join("\n")
 
-        //                     // Parse the CLI output as JSON
-        //                     def jsonSlurper = new groovy.json.JsonSlurper()
-        //                     def cliOutputJson = jsonSlurper.parseText(cliOutput)
+                    //         // Parse the CLI output as JSON
+                    //         def jsonSlurper = new groovy.json.JsonSlurper()
+                    //         def cliOutputJson = jsonSlurper.parseText(cliOutput)
 
-        //                     // Check if 'Reservations' is empty
-        //                     if (cliOutputJson.Reservations.isEmpty()) {
-        //                         // echo "No valid instances entered."
-        //                         error("No valid instances entered. Exiting the pipeline.")
-        //                     } 
+                    //         // Check if 'Reservations' is empty
+                    //         if (cliOutputJson.Reservations.isEmpty()) {
+                    //             // echo "No valid instances entered."
+                    //             error("No valid instances entered. Exiting the pipeline.")
+                    //         } 
 
-        //                     // Parse json output to get instance names and IDs
-        //                     cliOutputJson.Reservations.each { reservation ->
-        //                         reservation.Instances.each { instance ->
-        //                             def instanceId = instance.InstanceId
-        //                             def instanceNameTag = instance.Tags.find { tag -> tag.Key == 'Name' }
-        //                             def instanceName = instanceNameTag ? instanceNameTag.Value : 'Unknown'
+                    //         // Parse json output to get instance names and IDs
+                    //         cliOutputJson.Reservations.each { reservation ->
+                    //             reservation.Instances.each { instance ->
+                    //                 def instanceId = instance.InstanceId
+                    //                 def instanceNameTag = instance.Tags.find { tag -> tag.Key == 'Name' }
+                    //                 def instanceName = instanceNameTag ? instanceNameTag.Value : 'Unknown'
 
-        //                             validInstances << [id: instanceId, name: instanceName]
+                    //                 validInstances << [id: instanceId, name: instanceName]
 
-        //                         }
-        //                     }
+                    //             }
+                    //         }
 
-        //                     // Create a string representation of the validInstances array
-        //                     def instanceStrings = validInstances.collect { it.name + ": " + it.id }.join(', ')
-        //                     echo "Valid instances: ${instanceStrings}"
+                    //         // Create a string representation of the validInstances array
+                    //         def validInstancesStr = validInstances.collect { it.name + ": " + it.id }.join(', ')
+                    //         echo "Valid instances: ${validInstancesStr}"
 
-        //                     // Find and display invalid instance names
-        //                     def instanceNamesSplit = instanceNames.split(',') 
-        //                     def invalidInstanceNames = instanceNamesSplit.findAll { name -> !validInstances.find { it.name == name.trim() } }
-        //                     if (invalidInstanceNames) {
-        //                         unstable("Invalid instances: ${invalidInstanceNames.join(', ')}")
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                    //         // Find and display invalid instance names
+                    //         def instanceNamesSplit = instanceNames.split(',') 
+                    //         def invalidInstanceNames = instanceNamesSplit.findAll { name -> !validInstances.find { it.name == name.trim() } }
+                    //         if (invalidInstanceNames) {
+                    //             unstable("Invalid instances: ${invalidInstanceNames.join(', ')}")
+                    //         }
+                    //     }
+                    // }
+
+                    validInstances = [
+                        [id: 'TEST1', name: 'name1'],
+                        [id: 'TEST', name: 'name2']
+                                // Add more maps as needed
+                    ]
+
+                    
+                }
+            }
+        }
         stage('ValidateSchedule') {
             when {
                 expression { params.Mode == 'Scheduled'}
@@ -172,9 +180,11 @@ pipeline {
                     // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
                     def scheduledBuildId = UUID.randomUUID()
                     scheduledBuildId = scheduledBuildId.toString()
+
+                    def validInstancesNameStr = validInstances.collect { it.name }.join(',')
                     
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
+                    setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     
                 }
             }
