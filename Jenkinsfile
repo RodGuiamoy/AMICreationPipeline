@@ -131,7 +131,7 @@ pipeline {
                 script {
 
                      // Specify the future date and time in military time (24-hour format)
-                    // String futureDateTime = "01/27/2024 14:25" //what if datetime is in a past date?
+                    // String futureDateTime = "01/27/2024 14:25"
                     String executionDateTimeStr = params.Date + ' ' + params.Time
 
                     // Parse the future date and time
@@ -255,7 +255,7 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
         new StringParameterValue('InstanceNames', instanceNames),
         new StringParameterValue('TicketNumber', ticketNumber),
         new StringParameterValue('Mode', mode),
-        new StringParameterValue('ExecutionDateTime', executionDateTimeStr)
+        new StringParameterValue('ExecutionDateTime', executionDateTimeStr),
         new StringParameterValue('ScheduledBuildId', scheduledBuildId)
     ]
 
