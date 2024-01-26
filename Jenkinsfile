@@ -93,7 +93,7 @@ pipeline {
                             // Check if 'Reservations' is empty
                             if (cliOutputJson.Reservations.isEmpty()) {
                                 // echo "No valid instances entered."
-                                error("No valid instances entered. Exiting the pipeline.")
+                                error("Any of the instances entered does not exist in region ${region}. Exiting the pipeline.")
                             } 
 
                             // Parse json output to get instance names and IDs
