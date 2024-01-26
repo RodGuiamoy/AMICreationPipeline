@@ -1,5 +1,4 @@
 import java.util.UUID
-import hudson.model.*;
 
 def environment = ""
 def region = ""
