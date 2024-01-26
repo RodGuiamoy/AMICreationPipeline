@@ -4,10 +4,12 @@ import hudson.model.*;
 def environment = ""
 def region = ""
 
-int delaySeconds = 0
 def account = ""
 def role = ""
 def validInstances = []
+
+String executionDateTimeStr = ""
+int delaySeconds = 0
 
 pipeline {
     parameters {
@@ -130,17 +132,17 @@ pipeline {
 
                      // Specify the future date and time in military time (24-hour format)
                     // String futureDateTime = "01/27/2024 14:25" //what if datetime is in a past date?
-                    String futureDateTime = params.Date + ' ' + params.Time
+                    String executionDateTimeStr = params.Date + ' ' + params.Time
 
                     // Parse the future date and time
                     def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-                    Date futureDate = dateFormat.parse(futureDateTime)
+                    Date executionDate = dateFormat.parse(executionDateTimeStr)
 
                     // Get the current date and time
                     Date currentDate = new Date()
 
                     // Calculate the difference in milliseconds
-                    long differenceInMillis = futureDate.time - currentDate.time
+                    long differenceInMillis = executionDate.time - currentDate.time
 
                     // Convert the difference to seconds
                     delaySeconds = differenceInMillis / 1000
@@ -148,6 +150,8 @@ pipeline {
                     if (delaySeconds < 0) {
                         error ("Date must be in a future date.")
                     }
+
+                    echo "Scheduled date ${futureDate} is valid."
                 }
             }
         }
@@ -164,7 +168,7 @@ pipeline {
                     scheduledBuildId = scheduledBuildId.toString()
                     
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, delaySeconds)
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, futureDateTime, delaySeconds)
                     
                 }
             }
@@ -237,7 +241,7 @@ pipeline {
     }
 }
 
-def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, delaySeconds) {
+def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTimeStr, delaySeconds) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
@@ -251,6 +255,7 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
         new StringParameterValue('InstanceNames', instanceNames),
         new StringParameterValue('TicketNumber', ticketNumber),
         new StringParameterValue('Mode', mode),
+        new StringParameterValue('ExecutionDateTime', executionDateTimeStr)
         new StringParameterValue('ScheduledBuildId', scheduledBuildId)
     ]
 
