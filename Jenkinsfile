@@ -1,10 +1,14 @@
 import java.util.UUID
 
+def environment = ""
 def region = ""
-def role = ""
-def awsCredential = ""
+
 def account = ""
+def role = ""
 def validInstances = []
+
+String executionDateTimeStr = ""
+int delaySeconds = 0
 
 pipeline {
     parameters {
@@ -24,6 +28,18 @@ pipeline {
             name: 'TicketNumber',
             defaultValue: 'SCTASK00000000',
         )
+        choice( 
+            name: 'Mode',
+            choices: ['Adhoc','Scheduled'],
+        )
+        string(
+            name: 'Date',
+            defaultValue: 'MM/DD/YYYY',
+        )
+        string(
+            name: 'Time',
+            defaultValue: 'HH:MM',
+        )
     }
     agent any
 
@@ -31,25 +47,24 @@ pipeline {
         stage('GetEnvironmentDetails') {
             steps {
                 script {
-                    def environment = params.Environment
+                    environment = params.Environment
                     
                     region = params.Region
                     role = 'AMICreationRole'
                     
                     switch (environment) {
                         case 'rod_aws':
-                            awsCredential = 'rod_aws'
                             account = '554249804926'
                             break
                         case 'rod_aws_2':
-                            awsCredential = 'rod_aws_2'
                             account = '992382788789'
                             break
                         default:
                             error("No matching environment details found that matches \"${environment}\". Exiting pipeline.")
                     }
 
-                    echo "Successfully retrieved environment details for environment \"${environment}\""
+                    echo "Successfully retrieved environment details for environment \"${environment}\""                   
+
                 }
             }
 
@@ -77,7 +92,7 @@ pipeline {
                             // Check if 'Reservations' is empty
                             if (cliOutputJson.Reservations.isEmpty()) {
                                 // echo "No valid instances entered."
-                                error("No valid instances entered. Exiting the pipeline.")
+                                error("Any of the instances entered does not exist in region ${region}. Exiting the pipeline.")
                             } 
 
                             // Parse json output to get instance names and IDs
@@ -93,8 +108,8 @@ pipeline {
                             }
 
                             // Create a string representation of the validInstances array
-                            def instanceStrings = validInstances.collect { it.name + ": " + it.id }.join(', ')
-                            echo "Valid instances: ${instanceStrings}"
+                            def validInstancesStr = validInstances.collect { it.name + ": " + it.id }.join(', ')
+                            echo "Valid instances: ${validInstancesStr}"
 
                             // Find and display invalid instance names
                             def instanceNamesSplit = instanceNames.split(',') 
@@ -104,10 +119,81 @@ pipeline {
                             }
                         }
                     }
+
+                    // validInstances = [
+                    //     [id: 'TEST1', name: 'name1'],
+                    //     [id: 'TEST', name: 'name2']
+                    //             // Add more maps as needed
+                    // ]
+
+                    
+                }
+            }
+        }
+        stage('ValidateSchedule') {
+            when {
+                expression { params.Mode == 'Scheduled'}
+            }
+            steps {
+                script {
+
+                     // Specify the future date and time in military time (24-hour format)
+                    // String futureDateTime = "01/27/2024 14:25"
+                    executionDateTimeStr = params.Date + ' ' + params.Time
+
+                    Date executionDate = null
+
+                    try {
+                        // Parse the future date and time
+                        def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
+                        executionDate = dateFormat.parse(executionDateTimeStr)
+                    }
+                    catch (ex) {
+                        // Handle the error without failing the build
+                        error("Unable to parse DateTime ${executionDateTimeStr}.")
+                    }
+                    
+                    // Get the current date and time
+                    Date currentDate = new Date()
+
+                    // Calculate the difference in milliseconds
+                    long differenceInMillis = executionDate.time - currentDate.time
+
+                    // Convert the difference to seconds
+                    delaySeconds = differenceInMillis / 1000
+
+                    if (delaySeconds < 0) {
+                        error ("Scheduled date must be in a future date.")
+                    }
+
+                    echo "Scheduled date ${executionDateTimeStr} is valid."
+                }
+            }
+        }
+        stage('ScheduleAMICreation') {
+            when {
+                expression { params.Mode == 'Scheduled'}
+            }
+            steps {
+                script {
+                    echo "Will create scheduled Jenkins build."
+
+                    // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
+                    def scheduledBuildId = UUID.randomUUID()
+                    scheduledBuildId = scheduledBuildId.toString()
+
+                    def validInstancesNameStr = validInstances.collect { it.name }.join(',')
+                    
+                    // Example usage
+                    setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
+                    
                 }
             }
         }
         stage('CreateAMI') {
+            when {
+                expression { params.Mode == 'Adhoc'}
+            }
             steps {
                 script {
 
@@ -170,4 +256,25 @@ pipeline {
             }
         }
     }
+}
+
+def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
+    // def job = Hudson.instance.getJob('AMICreationPipeline')
+    def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
+
+    if (job == null) {
+        throw new IllegalStateException("Job not found: AMICreationPipeline")
+    }
+
+    def params = [
+        new StringParameterValue('Environment', environment),
+        new StringParameterValue('Region', region),
+        new StringParameterValue('InstanceNames', instanceNames),
+        new StringParameterValue('TicketNumber', ticketNumber),
+        new StringParameterValue('Mode', mode),
+        new StringParameterValue('ExecutionDateTime', executionDateTime),
+        new StringParameterValue('ScheduledBuildId', scheduledBuildId)
+    ]
+
+    def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
 }
