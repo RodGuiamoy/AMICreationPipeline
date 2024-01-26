@@ -154,7 +154,7 @@ pipeline {
                     delaySeconds = differenceInMillis / 1000
 
                     if (delaySeconds < 0) {
-                        error ("Date must be in a future date.")
+                        error ("Scheduled date must be in a future date.")
                     }
 
                     echo "Scheduled date ${executionDateTimeStr} is valid."
