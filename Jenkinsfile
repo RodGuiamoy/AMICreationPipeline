@@ -151,7 +151,7 @@ pipeline {
                         error ("Date must be in a future date.")
                     }
 
-                    echo "Scheduled date ${executionDate} is valid."
+                    echo "Scheduled date ${executionDateTimeStr} is valid."
                 }
             }
         }
@@ -168,7 +168,7 @@ pipeline {
                     scheduledBuildId = scheduledBuildId.toString()
                     
                     // Example usage
-                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, futureDateTime, delaySeconds)
+                    setDelayedBuild(environment, region, params.InstanceNames, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     
                 }
             }
@@ -241,7 +241,7 @@ pipeline {
     }
 }
 
-def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTimeStr, delaySeconds) {
+def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
@@ -255,7 +255,7 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
         new StringParameterValue('InstanceNames', instanceNames),
         new StringParameterValue('TicketNumber', ticketNumber),
         new StringParameterValue('Mode', mode),
-        new StringParameterValue('ExecutionDateTime', executionDateTimeStr),
+        new StringParameterValue('ExecutionDateTime', executionDateTime),
         new StringParameterValue('ScheduledBuildId', scheduledBuildId)
     ]
 
