@@ -132,7 +132,7 @@ pipeline {
 
                      // Specify the future date and time in military time (24-hour format)
                     // String futureDateTime = "01/27/2024 14:25"
-                    String executionDateTimeStr = params.Date + ' ' + params.Time
+                    executionDateTimeStr = params.Date + ' ' + params.Time
 
                     // Parse the future date and time
                     def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
