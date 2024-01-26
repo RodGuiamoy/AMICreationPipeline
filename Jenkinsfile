@@ -151,7 +151,7 @@ pipeline {
                         error ("Date must be in a future date.")
                     }
 
-                    echo "Scheduled date ${futureDate} is valid."
+                    echo "Scheduled date ${executionDate} is valid."
                 }
             }
         }
