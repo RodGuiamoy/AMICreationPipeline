@@ -5,6 +5,30 @@ def environment = ""
 
 def account = ""
 def role = ""
+
+class PrefixRegion {
+    String prefix
+    String region
+}
+
+class InstanceRegion {
+    String instance
+    String region
+}
+
+// Example array of PrefixRegion objects
+def prefixRegions = [
+    new PrefixRegion(prefix: "USEA", region: "us-east-1"),
+    new PrefixRegion(prefix: "USWE", region: "us-west-1"),
+    new PrefixRegion(prefix: "EUCE", region: "eu-central-1"),
+    new PrefixRegion(prefix: "EUWE", region: "eu-west-1"),
+    new PrefixRegion(prefix: "APAU", region: "ap-southeast-2"),
+    new PrefixRegion(prefix: "APSP", region: "ap-southeast-1"),
+    new PrefixRegion(prefix: "UOUE", region: "us-east-1"),
+    new PrefixRegion(prefix: "UOUW", region: "us-west-1"),
+    new PrefixRegion(prefix: "CACE", region: "ca-central-1")
+]
+
 def validInstances = []
 
 String executionDateTimeStr = ""
@@ -278,28 +302,7 @@ pipeline {
 }
 
 
-class PrefixRegion {
-    String prefix
-    String region
-}
 
-class InstanceRegion {
-    String instance
-    String region
-}
-
-// Example array of PrefixRegion objects
-def prefixRegions = [
-    new PrefixRegion(prefix: "USEA", region: "us-east-1"),
-    new PrefixRegion(prefix: "USWE", region: "us-west-1"),
-    new PrefixRegion(prefix: "EUCE", region: "eu-central-1"),
-    new PrefixRegion(prefix: "EUWE", region: "eu-west-1"),
-    new PrefixRegion(prefix: "APAU", region: "ap-southeast-2"),
-    new PrefixRegion(prefix: "APSP", region: "ap-southeast-1"),
-    new PrefixRegion(prefix: "UOUE", region: "us-east-1"),
-    new PrefixRegion(prefix: "UOUW", region: "us-west-1"),
-    new PrefixRegion(prefix: "CACE", region: "ca-central-1")
-]
 
 // Function to find region by prefix
 def findRegionByPrefix(String instance, List<PrefixRegion> prefixRegions) {
