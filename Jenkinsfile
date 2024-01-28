@@ -72,53 +72,72 @@ pipeline {
         stage('ValidateEC2') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
-                        withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
-                            
-                            // removes whitespaces from instance names
-                            def instanceNames = params.InstanceNames.replaceAll("\\s+", "")
-                            
-                            def awsCliCommand = "aws ec2 describe-instances --filters \"Name=tag:Name,Values=${instanceNames}\" --region ${region} --output json"
 
-                            // Executes the AWS CLI command and does some post-processing.
-                            // The output includes the command at the top and can't be parsed so we have to drop the first line
-                            def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
-                            cliOutput = cliOutput.readLines().drop(1).join("\n")
+                    def instanceNames = params.InstanceNames.replaceAll("\\s+", "")
 
-                            // Parse the CLI output as JSON
-                            def jsonSlurper = new groovy.json.JsonSlurper()
-                            def cliOutputJson = jsonSlurper.parseText(cliOutput)
-
-                            // Check if 'Reservations' is empty
-                            if (cliOutputJson.Reservations.isEmpty()) {
-                                // echo "No valid instances entered."
-                                error("Any of the instances entered does not exist in region ${region}. Exiting the pipeline.")
-                            } 
-
-                            // Parse json output to get instance names and IDs
-                            cliOutputJson.Reservations.each { reservation ->
-                                reservation.Instances.each { instance ->
-                                    def instanceId = instance.InstanceId
-                                    def instanceNameTag = instance.Tags.find { tag -> tag.Key == 'Name' }
-                                    def instanceName = instanceNameTag ? instanceNameTag.Value : 'Unknown'
-
-                                    validInstances << [id: instanceId, name: instanceName]
-
-                                }
-                            }
-
-                            // Create a string representation of the validInstances array
-                            def validInstancesStr = validInstances.collect { it.name + ": " + it.id }.join(', ')
-                            echo "Valid instances: ${validInstancesStr}"
-
-                            // Find and display invalid instance names
-                            def instanceNamesSplit = instanceNames.split(',') 
-                            def invalidInstanceNames = instanceNamesSplit.findAll { name -> !validInstances.find { it.name == name.trim() } }
-                            if (invalidInstanceNames) {
-                                unstable("Invalid instances: ${invalidInstanceNames.join(', ')}")
-                            }
+                    // Populate valid and invalid instances arrays
+                    instanceNames.each { instance ->
+                        def region = findRegionByPrefix(instance, prefixRegions)
+                        if (region) {
+                            validInstances << new InstanceRegion(instance: instance, region: region)
+                        } else {
+                            invalidInstances << instance
                         }
                     }
+
+                    println "Valid Instances and Regions:"
+                    validInstances.each { println "${it.instance} - ${it.region}" }
+
+                    println "\nInvalid Instances:"
+                    invalidInstances.each { println it }
+
+                    // withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
+                    //     withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
+                            
+                    //         // removes whitespaces from instance names
+                    //         def instanceNames = params.InstanceNames.replaceAll("\\s+", "")
+                            
+                    //         def awsCliCommand = "aws ec2 describe-instances --filters \"Name=tag:Name,Values=${instanceNames}\" --region ${region} --output json"
+
+                    //         // Executes the AWS CLI command and does some post-processing.
+                    //         // The output includes the command at the top and can't be parsed so we have to drop the first line
+                    //         def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
+                    //         cliOutput = cliOutput.readLines().drop(1).join("\n")
+
+                    //         // Parse the CLI output as JSON
+                    //         def jsonSlurper = new groovy.json.JsonSlurper()
+                    //         def cliOutputJson = jsonSlurper.parseText(cliOutput)
+
+                    //         // Check if 'Reservations' is empty
+                    //         if (cliOutputJson.Reservations.isEmpty()) {
+                    //             // echo "No valid instances entered."
+                    //             error("Any of the instances entered does not exist in region ${region}. Exiting the pipeline.")
+                    //         } 
+
+                    //         // Parse json output to get instance names and IDs
+                    //         cliOutputJson.Reservations.each { reservation ->
+                    //             reservation.Instances.each { instance ->
+                    //                 def instanceId = instance.InstanceId
+                    //                 def instanceNameTag = instance.Tags.find { tag -> tag.Key == 'Name' }
+                    //                 def instanceName = instanceNameTag ? instanceNameTag.Value : 'Unknown'
+
+                    //                 validInstances << [id: instanceId, name: instanceName]
+
+                    //             }
+                    //         }
+
+                    //         // Create a string representation of the validInstances array
+                    //         def validInstancesStr = validInstances.collect { it.name + ": " + it.id }.join(', ')
+                    //         echo "Valid instances: ${validInstancesStr}"
+
+                    //         // Find and display invalid instance names
+                    //         def instanceNamesSplit = instanceNames.split(',') 
+                    //         def invalidInstanceNames = instanceNamesSplit.findAll { name -> !validInstances.find { it.name == name.trim() } }
+                    //         if (invalidInstanceNames) {
+                    //             unstable("Invalid instances: ${invalidInstanceNames.join(', ')}")
+                    //         }
+                    //     }
+                    // }
 
                     // validInstances = [
                     //     [id: 'TEST1', name: 'name1'],
@@ -130,132 +149,166 @@ pipeline {
                 }
             }
         }
-        stage('ValidateSchedule') {
-            when {
-                expression { params.Mode == 'Scheduled'}
-            }
-            steps {
-                script {
+        // stage('ValidateSchedule') {
+        //     when {
+        //         expression { params.Mode == 'Scheduled'}
+        //     }
+        //     steps {
+        //         script {
 
-                     // Specify the future date and time in military time (24-hour format)
-                    // String futureDateTime = "01/27/2024 14:25"
-                    executionDateTimeStr = params.Date + ' ' + params.Time
+        //              // Specify the future date and time in military time (24-hour format)
+        //             // String futureDateTime = "01/27/2024 14:25"
+        //             executionDateTimeStr = params.Date + ' ' + params.Time
 
-                    Date executionDate = null
+        //             Date executionDate = null
 
-                    try {
-                        // Parse the future date and time
-                        def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-                        executionDate = dateFormat.parse(executionDateTimeStr)
-                    }
-                    catch (ex) {
-                        // Handle the error without failing the build
-                        error("Unable to parse DateTime ${executionDateTimeStr}.")
-                    }
+        //             try {
+        //                 // Parse the future date and time
+        //                 def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
+        //                 executionDate = dateFormat.parse(executionDateTimeStr)
+        //             }
+        //             catch (ex) {
+        //                 // Handle the error without failing the build
+        //                 error("Unable to parse DateTime ${executionDateTimeStr}.")
+        //             }
                     
-                    // Get the current date and time
-                    Date currentDate = new Date()
+        //             // Get the current date and time
+        //             Date currentDate = new Date()
 
-                    // Calculate the difference in milliseconds
-                    long differenceInMillis = executionDate.time - currentDate.time
+        //             // Calculate the difference in milliseconds
+        //             long differenceInMillis = executionDate.time - currentDate.time
 
-                    // Convert the difference to seconds
-                    delaySeconds = differenceInMillis / 1000
+        //             // Convert the difference to seconds
+        //             delaySeconds = differenceInMillis / 1000
 
-                    if (delaySeconds < 0) {
-                        error ("Scheduled date must be in a future date.")
-                    }
+        //             if (delaySeconds < 0) {
+        //                 error ("Scheduled date must be in a future date.")
+        //             }
 
-                    echo "Scheduled date ${executionDateTimeStr} is valid."
-                }
-            }
-        }
-        stage('ScheduleAMICreation') {
-            when {
-                expression { params.Mode == 'Scheduled'}
-            }
-            steps {
-                script {
-                    echo "Will create scheduled Jenkins build."
+        //             echo "Scheduled date ${executionDateTimeStr} is valid."
+        //         }
+        //     }
+        // }
+        // stage('ScheduleAMICreation') {
+        //     when {
+        //         expression { params.Mode == 'Scheduled'}
+        //     }
+        //     steps {
+        //         script {
+        //             echo "Will create scheduled Jenkins build."
 
-                    // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
-                    def scheduledBuildId = UUID.randomUUID()
-                    scheduledBuildId = scheduledBuildId.toString()
+        //             // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
+        //             def scheduledBuildId = UUID.randomUUID()
+        //             scheduledBuildId = scheduledBuildId.toString()
 
-                    def validInstancesNameStr = validInstances.collect { it.name }.join(',')
+        //             def validInstancesNameStr = validInstances.collect { it.name }.join(',')
                     
-                    // Example usage
-                    setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
+        //             // Example usage
+        //             setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     
-                }
-            }
-        }
-        stage('CreateAMI') {
-            when {
-                expression { params.Mode == 'Adhoc'}
-            }
-            steps {
-                script {
+        //         }
+        //     }
+        // }
+        // stage('CreateAMI') {
+        //     when {
+        //         expression { params.Mode == 'Adhoc'}
+        //     }
+        //     steps {
+        //         script {
 
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
-                        withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
+        //             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
+        //                 withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
 
-                            def ticketNumber = params.TicketNumber
+        //                     def ticketNumber = params.TicketNumber
                             
-                            // validInstances = [
-                            //     [id: 'TEST1', name: 'name1'],
-                            //     [id: 'TEST', name: 'name2']
-                            //     // Add more maps as needed
-                            // ]
+        //                     // validInstances = [
+        //                     //     [id: 'TEST1', name: 'name1'],
+        //                     //     [id: 'TEST', name: 'name2']
+        //                     //     // Add more maps as needed
+        //                     // ]
 
-                            validInstances.each { instance ->
-                                def instanceId = instance.id
-                                def instanceName = instance.name
+        //                     validInstances.each { instance ->
+        //                         def instanceId = instance.id
+        //                         def instanceName = instance.name
 
-                                // Generate a three character, alphanumeric tag
-                                def uuid = UUID.randomUUID()
-                                def uuidString = uuid.toString()
-                                def tag = uuidString[0..2]
+        //                         // Generate a three character, alphanumeric tag
+        //                         def uuid = UUID.randomUUID()
+        //                         def uuidString = uuid.toString()
+        //                         def tag = uuidString[0..2]
                                 
-                                // Get UTC date
-                                def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
-                                utcDate = utcDate.readLines().drop(1).join("\n")
+        //                         // Get UTC date
+        //                         def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
+        //                         utcDate = utcDate.readLines().drop(1).join("\n")
 
-                                def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
+        //                         def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
 
-                                echo "Creating AMI ${amiName} for ${instanceId}."
+        //                         echo "Creating AMI ${amiName} for ${instanceId}."
 
-                                def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
+        //                         def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
 
-                                try {
-                                    // Executes the AWS CLI command and does some post-processing.
-                                    // The output includes the command at the top and can't be parsed so we have to drop the first line
-                                    def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
-                                    cliOutput = cliOutput.readLines().drop(1).join("\n")
+        //                         try {
+        //                             // Executes the AWS CLI command and does some post-processing.
+        //                             // The output includes the command at the top and can't be parsed so we have to drop the first line
+        //                             def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
+        //                             cliOutput = cliOutput.readLines().drop(1).join("\n")
                                 
-                                    // Parse the CLI output as JSON
-                                    def jsonSlurper = new groovy.json.JsonSlurper()
-                                    def cliOutputJson = jsonSlurper.parseText(cliOutput)
+        //                             // Parse the CLI output as JSON
+        //                             def jsonSlurper = new groovy.json.JsonSlurper()
+        //                             def cliOutputJson = jsonSlurper.parseText(cliOutput)
 
-                                    // Check if 'Reservations' is empty
-                                    if (cliOutputJson.ImageId.isEmpty()) {
-                                        unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
-                                        return
-                                    }
+        //                             // Check if 'Reservations' is empty
+        //                             if (cliOutputJson.ImageId.isEmpty()) {
+        //                                 unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
+        //                                 return
+        //                             }
 
-                                    echo "Successfully created AMI ${cliOutputJson.ImageId}."
+        //                             echo "Successfully created AMI ${cliOutputJson.ImageId}."
                                     
-                                } catch (ex) {
-                                    // Handle the error without failing the build
-                                    unstable('Error in creating AMI. Moving on to next EC2 instance.')
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        //                         } catch (ex) {
+        //                             // Handle the error without failing the build
+        //                             unstable('Error in creating AMI. Moving on to next EC2 instance.')
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+    }
+}
+
+
+class PrefixRegion {
+    String prefix
+    String region
+}
+
+class InstanceRegion {
+    String instance
+    String region
+}
+
+// Example array of PrefixRegion objects
+def prefixRegions = [
+    new PrefixRegion(prefix: "USEA", region: "us-east-1"),
+    new PrefixRegion(prefix: "USWE", region: "us-west-1"),
+    new PrefixRegion(prefix: "EUCE", region: "eu-central-1"),
+    new PrefixRegion(prefix: "EUWE", region: "eu-west-1")
+    new PrefixRegion(prefix: "APAU", region: "ap-southeast-2")
+    new PrefixRegion(prefix: "APSP", region: "ap-southeast-1")
+    new PrefixRegion(prefix: "UOUE", region: "us-east-1")
+    new PrefixRegion(prefix: "UOUW", region: "us-west-1")
+    new PrefixRegion(prefix: "CACE", region: "ca-central-1")
+]
+
+// Function to find region by prefix
+def findRegionByPrefix(String instance, List<PrefixRegion> prefixRegions) {
+    for (pr in prefixRegions) {
+        if (instance.startsWith(pr.prefix)) {
+            return pr.region
         }
     }
+    return null // Return null if no match is found
 }
 
 def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
