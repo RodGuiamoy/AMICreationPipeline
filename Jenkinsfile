@@ -1,7 +1,7 @@
 import java.util.UUID
 
 def environment = ""
-def region = ""
+// def region = ""
 
 def account = ""
 def role = ""
