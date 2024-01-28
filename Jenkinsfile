@@ -98,7 +98,8 @@ pipeline {
             steps {
                 script {
 
-                    def instanceNames = params.InstanceNames.replaceAll("\\s+", "")
+                    // removes whitespaces from instance names and splits them
+                    def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
 
                     // Populate valid and invalid instances arrays
                     instanceNames.each { instance ->
