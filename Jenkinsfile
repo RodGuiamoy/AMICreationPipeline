@@ -30,6 +30,7 @@ def prefixRegions = [
 ]
 
 def validInstances = []
+def invalidInstances = []
 
 String executionDateTimeStr = ""
 int delaySeconds = 0
