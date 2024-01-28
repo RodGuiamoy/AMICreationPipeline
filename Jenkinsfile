@@ -5,15 +5,16 @@ class PrefixRegion {
     String region
 }
 
-class InstanceRegion {
-    String instance
+class ValidInstanceDetails {
+    String instanceName
+    String instanceId
     String region
 }
 
 // Function to find region by prefix
-def findRegionByPrefix(String instance, List<PrefixRegion> prefixRegions) {
+def findRegionByPrefix(String instanceName, List<PrefixRegion> prefixRegions) {
     for (pr in prefixRegions) {
-        if (instance.startsWith(pr.prefix)) {
+        if (instanceName.startsWith(pr.prefix)) {
             return pr.region
         }
     }
@@ -135,21 +136,28 @@ pipeline {
 
 
                     // Populate valid and invalid instances arrays
-                    instanceNames.each { instance ->
-                        def region = findRegionByPrefix(instance, prefixRegions)
+                    instanceNames.each { instanceName ->
+                        def region = findRegionByPrefix(instanceName, prefixRegions)
                         if (region) {
-                            validInstances << new InstanceRegion(instance: instance, region: region)
+                            validInstances << new ValidInstanceDetails(instanceName: instanceName, region: region)
                         } else {
-                            invalidInstances << instance
+                            invalidInstances << instanceName
                         }
                     }
 
-                    println "Valid Instances and Regions:"
-                    validInstances.each { println "${it.instance} - ${it.region}" }
+                    // Exit the pipeline if there are no valid instances
+                    if (validInstances.isEmpty()) {
+                        error("Unable to identify a region to all instances. Please verify that the correct account alias and EC2 instance names have been entered. Exiting the pipeline.")
+                    }
 
-                    println "\nInvalid Instances:"
-                    // invalidInstances.each { println it }
-                    unstable("Invalid instances: ${invalidInstances.join(', ')}")
+                    // validInstances.each { println "${it.instance} - ${it.region}" }
+                    def validInstanceRegionStr = validInstances.collect { it.instanceName + ": " + it.region }.join(', ')
+                    echo "Successfully identified a region to the following instances: ${validInstanceRegionStr}"
+
+                    if (invalidInstances) {
+                        unstable("Unable to identify a region to the following instances: ${invalidInstances.join(', ')}")
+                    }
+                    
 
                     // withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
                     //     withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
