@@ -1,11 +1,5 @@
 import java.util.UUID
 
-def environment = ""
-// def region = ""
-
-def account = ""
-def role = ""
-
 class PrefixRegion {
     String prefix
     String region
@@ -15,6 +9,50 @@ class InstanceRegion {
     String instance
     String region
 }
+
+// Function to find region by prefix
+def findRegionByPrefix(String instance, List<PrefixRegion> prefixRegions) {
+    for (pr in prefixRegions) {
+        if (instance.startsWith(pr.prefix)) {
+            return pr.region
+        }
+    }
+    return null // Return null if no match is found
+}
+
+def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
+    // def job = Hudson.instance.getJob('AMICreationPipeline')
+    def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
+
+    if (job == null) {
+        throw new IllegalStateException("Job not found: AMICreationPipeline")
+    }
+
+    def params = [
+        new StringParameterValue('Environment', environment),
+        new StringParameterValue('Region', region),
+        new StringParameterValue('InstanceNames', instanceNames),
+        new StringParameterValue('TicketNumber', ticketNumber),
+        new StringParameterValue('Mode', mode),
+        new StringParameterValue('ExecutionDateTime', executionDateTime),
+        new StringParameterValue('ScheduledBuildId', scheduledBuildId)
+    ]
+
+    def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
+}
+
+// Variables used in 'GetEnvironmentDetails' stage
+def environment = ""
+def account = ""
+def role = ""
+
+// Variables used in 'ValidateEC2' stage
+def validInstances = []
+def invalidInstances = []
+
+// Variables used in 'ValidateSchedule' and 'ScheduleAMICreation' stages
+String executionDateTimeStr = ""
+int delaySeconds = 0
 
 // Example array of PrefixRegion objects
 def prefixRegions = [
@@ -29,12 +67,6 @@ def prefixRegions = [
     new PrefixRegion(prefix: "CACE", region: "ca-central-1")
 ]
 
-def validInstances = []
-def invalidInstances = []
-
-String executionDateTimeStr = ""
-int delaySeconds = 0
-
 pipeline {
     parameters {
         choice(
@@ -47,7 +79,7 @@ pipeline {
         )
         string(
             name: 'InstanceNames',
-            defaultValue: 'TEST1,TEST2,TEST3', 
+            defaultValue: 'APSPTEST1,APSPTEST2,APAUTEST3', 
         )
         string(
             name: 'TicketNumber',
@@ -101,6 +133,7 @@ pipeline {
                     // removes whitespaces from instance names and splits them
                     def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
 
+
                     // Populate valid and invalid instances arrays
                     instanceNames.each { instance ->
                         def region = findRegionByPrefix(instance, prefixRegions)
@@ -115,7 +148,8 @@ pipeline {
                     validInstances.each { println "${it.instance} - ${it.region}" }
 
                     println "\nInvalid Instances:"
-                    invalidInstances.each { println it }
+                    // invalidInstances.each { println it }
+                    unstable("Invalid instances: ${invalidInstances.join(', ')}")
 
                     // withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
                     //     withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
@@ -306,33 +340,3 @@ pipeline {
 
 
 
-// Function to find region by prefix
-def findRegionByPrefix(String instance, List<PrefixRegion> prefixRegions) {
-    for (pr in prefixRegions) {
-        if (instance.startsWith(pr.prefix)) {
-            return pr.region
-        }
-    }
-    return null // Return null if no match is found
-}
-
-def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
-    // def job = Hudson.instance.getJob('AMICreationPipeline')
-    def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
-
-    if (job == null) {
-        throw new IllegalStateException("Job not found: AMICreationPipeline")
-    }
-
-    def params = [
-        new StringParameterValue('Environment', environment),
-        new StringParameterValue('Region', region),
-        new StringParameterValue('InstanceNames', instanceNames),
-        new StringParameterValue('TicketNumber', ticketNumber),
-        new StringParameterValue('Mode', mode),
-        new StringParameterValue('ExecutionDateTime', executionDateTime),
-        new StringParameterValue('ScheduledBuildId', scheduledBuildId)
-    ]
-
-    def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
-}
