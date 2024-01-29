@@ -216,17 +216,29 @@ pipeline {
                     }
 
                     // Filter validInstances to get only objects with an instanceId
-                    def validInstancesWithId = validInstances.findAll { it.instanceId }
+                    // def validInstancesWithId = validInstances.findAll { it.instanceId }
                     
-                    // Create a string representation of the validInstances array
-                    def validInstancesStr = validInstancesWithId.collect { it.instanceName + ": " + it.instanceId }.join(', ')
-                    echo "Verified instances: ${validInstancesStr}"
+                    // // Create a string representation of the validInstances array
+                    // def validInstancesStr = validInstancesWithId.collect { it.instanceName + ": " + it.instanceId }.join(', ')
+                    // echo "Verified instances: ${validInstancesStr}"
 
                     // validInstances = [
                     //     [id: 'TEST1', name: 'name1'],
                     //     [id: 'TEST', name: 'name2']
                     //             // Add more maps as needed
                     // ]
+
+                    if (!validInstancesWithId.isEmpty()) {
+                        echo "Verified instances:"
+                        validInstancesWithId.each { instance ->
+                            echo "Instance Name: ${instance.instanceName}"
+                            echo "Instance ID: ${instance.instanceId}"
+                            echo "Region: ${instance.region}"
+                            echo "-----------------------"
+                        }
+                    } else {
+                        echo "No verified instances."
+                    }
 
                     
                 }
