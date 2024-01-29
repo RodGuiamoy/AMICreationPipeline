@@ -133,7 +133,7 @@ pipeline {
                     // removes whitespaces from instance names and splits them
                     def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
                     def invalidInstanceNames = []
-                    
+
                     // Populate valid and invalid instances arrays
                     instanceNames.each { instanceName ->
                         def region = findRegionByPrefix(instanceName, prefixRegions)
@@ -186,6 +186,7 @@ pipeline {
                                 if (cliOutputJson.Reservations.isEmpty()) {
                                     // echo "No valid instances entered."
                                     unstable("Instances does not exist in region ${region}.")
+                                    continue
                                 }
 
                                 // Parse json output to get instance names and IDs
