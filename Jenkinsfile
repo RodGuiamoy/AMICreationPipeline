@@ -153,12 +153,9 @@ pipeline {
                         unstable("Unable to identify a region for the following instances. Please verify that the correct account alias and EC2 instance names have been entered: ${invalidInstanceNames.join(', ')}")
                     }
 
-                    // validInstances.each { println "${it.instance} - ${it.region}" }
                     def validInstanceRegionStr = validInstances.collect { it.instanceName + ": " + it.region }.join(', ')
                     echo "Successfully identified a region for the following instances: ${validInstanceRegionStr}"
 
-
-                    
                     // Group instances by region
                     def instancesByRegion = validInstances.groupBy { it.region }
 
@@ -214,10 +211,10 @@ pipeline {
                     }
 
                     // Filter validInstances to get only objects with an instanceId
-                    def validInstances = validInstances.findAll { it.instanceId }
+                    validInstances = validInstances.findAll { it.instanceId }
 
                     // Displays a summary of valid EC2 instances
-                    if (!validInstancesWithId.isEmpty()) {
+                    if (!validInstances.isEmpty()) {
                         def verifiedInstancesStr = "Verified instances:\n"
                         verifiedInstancesStr += "-----------------------\n"
                         validInstancesWithId.each { instance ->
