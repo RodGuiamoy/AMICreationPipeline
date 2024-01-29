@@ -79,7 +79,7 @@ pipeline {
         )
         string(
             name: 'InstanceNames',
-            defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3', 
+            defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
         )
         string(
             name: 'TicketNumber',
@@ -154,7 +154,7 @@ pipeline {
                     echo "Successfully identified a region to the following instances: ${validInstanceRegionStr}"
 
                     if (invalidInstanceNames) {
-                        unstable("Unable to identify a region to the following instances: ${invalidInstanceNames.join(', ')}")
+                        unstable("Unable to identify a region to the following instances. Please verify that the correct account alias and EC2 instance names have been entered: ${invalidInstanceNames.join(', ')}")
                     }
                     
                     // Group instances by region
@@ -185,7 +185,7 @@ pipeline {
                                 // Check if 'Reservations' is empty
                                 if (cliOutputJson.Reservations.isEmpty()) {
                                     // echo "No valid instances entered."
-                                    unstable("Instances does not exist in region ${region}.")
+                                    unstable("None of the instances entered for region ${region} exists.")
                                     return
                                 }
 
@@ -201,35 +201,20 @@ pipeline {
                                     }
                                 }
 
+                                // Displays EC2s where their InstanceIDs are not identified hence does not exist
                                 def nonExistentEc2s = validInstances.findAll { it.region == region && !it.instanceId }
                                 if (!nonExistentEc2s.isEmpty()) {
                                     def nonExistentEc2Names = nonExistentEc2s.collect { it.instanceName }.join(', ')
                                     unstable("Non-existent EC2s for ${region}: ${nonExistentEc2Names}")
                                 }
-
-                                // // Find and display invalid instance names
-                                // def instanceNamesSplit = instanceNames.split(',') 
-                                // def invalidInstanceNames = instanceNamesSplit.findAll { name -> !validInstances.find { it.name == name.trim() } }
-                                // if (invalidInstanceNames) {
-                                //     unstable("Invalid instances: ${invalidInstanceNames.join(', ')}")
-                                // }
                             }
                         }
                     }
 
                     // Filter validInstances to get only objects with an instanceId
-                    def validInstancesWithId = validInstances.findAll { it.instanceId }
-                    
-                    // // Create a string representation of the validInstances array
-                    // def validInstancesStr = validInstancesWithId.collect { it.instanceName + ": " + it.instanceId }.join(', ')
-                    // echo "Verified instances: ${validInstancesStr}"
+                    def validInstances = validInstances.findAll { it.instanceId }
 
-                    // validInstances = [
-                    //     [id: 'TEST1', name: 'name1'],
-                    //     [id: 'TEST', name: 'name2']
-                    //             // Add more maps as needed
-                    // ]
-
+                    // Displays a summary of valid EC2 instances
                     if (!validInstancesWithId.isEmpty()) {
                         def verifiedInstancesStr = "Verified instances:\n"
                         verifiedInstancesStr += "-----------------------\n"
@@ -241,11 +226,7 @@ pipeline {
                         }
 
                         echo "${verifiedInstancesStr}"
-                    } else {
-                        echo "No verified instances."
-                    }
-
-                    
+                    }                    
                 }
             }
         }
