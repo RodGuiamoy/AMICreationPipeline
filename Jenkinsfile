@@ -5,7 +5,7 @@ class PrefixRegion {
     String region
 }
 
-class ValidInstanceDetails {
+class InstanceDetails {
     String instanceName
     String instanceId
     String region
@@ -138,7 +138,7 @@ pipeline {
                     instanceNames.each { instanceName ->
                         def region = findRegionByPrefix(instanceName, prefixRegions)
                         if (region) {
-                            validInstances << new ValidInstanceDetails(instanceName: instanceName, region: region)
+                            validInstances << new InstanceDetails(instanceName: instanceName, region: region)
                         } else {
                             invalidInstances << instanceName
                         }
@@ -195,17 +195,15 @@ pipeline {
                                         def instanceNameTag = instance.Tags.find { tag -> tag.Key == 'Name' }
                                         def instanceName = instanceNameTag ? instanceNameTag.Value : 'Unknown'
 
-                                        echo "${instanceId}: ${instanceName}"
+                                        // echo "${instanceId}: ${instanceName}"
 
                                         // update validinstances with instanceID
-                                        //validInstances.find { it.instanceName == instanceName && it.region == region }?.instanceId = instanceId
+                                        validInstances.find { it.instanceName == instanceName && it.region == region }?.instanceId = instanceId
 
                                     }
                                 }
 
-                                // // Create a string representation of the validInstances array
-                                // def validInstancesStr = validInstances.collect { it.name + ": " + it.id }.join(', ')
-                                // echo "Valid instances: ${validInstancesStr}"
+
 
                                 // // Find and display invalid instance names
                                 // def instanceNamesSplit = instanceNames.split(',') 
@@ -217,7 +215,12 @@ pipeline {
                         }
                     }
 
+                    // Filter validInstances to get only objects with an instanceId
+                    def validInstancesWithId = validInstances.findAll { it.instanceId }
                     
+                    // Create a string representation of the validInstances array
+                    def validInstancesStr = validInstancesWithId.collect { it.instanceName + ": " + it.instanceId }.join(', ')
+                    echo "Verified instances: ${validInstancesStr}"
 
                     // validInstances = [
                     //     [id: 'TEST1', name: 'name1'],
