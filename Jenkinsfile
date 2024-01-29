@@ -146,16 +146,18 @@ pipeline {
 
                     // Exit the pipeline if there are no valid instances
                     if (validInstances.isEmpty()) {
-                        error("Unable to identify a region to all instances. Please verify that the correct account alias and EC2 instance names have been entered. Exiting the pipeline.")
+                        error("Unable to identify a region for all instances. Please verify that the correct account alias and EC2 instance names have been entered. Exiting the pipeline.")
+                    }
+
+                    if (invalidInstanceNames) {
+                        unstable("Unable to identify a region for the following instances. Please verify that the correct account alias and EC2 instance names have been entered: ${invalidInstanceNames.join(', ')}")
                     }
 
                     // validInstances.each { println "${it.instance} - ${it.region}" }
                     def validInstanceRegionStr = validInstances.collect { it.instanceName + ": " + it.region }.join(', ')
-                    echo "Successfully identified a region to the following instances: ${validInstanceRegionStr}"
+                    echo "Successfully identified a region for the following instances: ${validInstanceRegionStr}"
 
-                    if (invalidInstanceNames) {
-                        unstable("Unable to identify a region to the following instances. Please verify that the correct account alias and EC2 instance names have been entered: ${invalidInstanceNames.join(', ')}")
-                    }
+
                     
                     // Group instances by region
                     def instancesByRegion = validInstances.groupBy { it.region }
