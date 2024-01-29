@@ -312,9 +312,9 @@ pipeline {
                                 //     // Add more maps as needed
                                 // ]
 
-                                def instanceNamesInRegion = instances.collect { it.instanceName }
+                                // def instanceNamesInRegion = instances.collect { it.instanceName }
 
-                                instanceNamesInRegion.each { instance ->
+                                instances.each { instance ->
                                     def instanceId = instance.instanceId
                                     def instanceName = instance.instanceName
 
