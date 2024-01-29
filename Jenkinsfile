@@ -132,7 +132,8 @@ pipeline {
 
                     // removes whitespaces from instance names and splits them
                     def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
-
+                    def invalidInstanceNames = []
+                    
                     // Populate valid and invalid instances arrays
                     instanceNames.each { instanceName ->
                         def region = findRegionByPrefix(instanceName, prefixRegions)
