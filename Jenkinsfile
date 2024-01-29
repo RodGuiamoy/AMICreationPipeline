@@ -235,8 +235,8 @@ pipeline {
                             verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
                             verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
                             verifiedInstancesStr += "Region: ${instance.region}\n"
+                            verifiedInstancesStr += "-----------------------\n"
                         }
-                        verifiedInstancesStr += "-----------------------\n"
 
                         echo "${verifiedInstancesStr}"
                     } else {
