@@ -158,6 +158,15 @@ pipeline {
                         unstable("Unable to identify a region to the following instances: ${invalidInstances.join(', ')}")
                     }
                     
+                    // Group instances by region
+                    def instancesByRegion = validInstances.groupBy { it.region }
+
+                    // Iterate over each region and verify instances
+                    instancesByRegion.each { region, instances ->
+                        echo  "Checking instances in region $region"
+                        def instanceNamesStr = instances.collect { it.instanceName }.join(', ')
+                        echo "Instance Names: ${instanceNamesStr}"
+                    }
 
                     // withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
                     //     withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
