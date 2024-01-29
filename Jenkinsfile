@@ -186,7 +186,7 @@ pipeline {
                                 if (cliOutputJson.Reservations.isEmpty()) {
                                     // echo "No valid instances entered."
                                     unstable("Instances does not exist in region ${region}.")
-                                    continue
+                                    return
                                 }
 
                                 // Parse json output to get instance names and IDs
