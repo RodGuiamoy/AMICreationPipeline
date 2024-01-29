@@ -230,7 +230,7 @@ pipeline {
 
                     if (!validInstancesWithId.isEmpty()) {
                         def verifiedInstancesStr = "Verified instances:\n"
-                        $verifiedInstancesStr += "-----------------------\n"
+                        verifiedInstancesStr += "-----------------------\n"
                         validInstancesWithId.each { instance ->
                             verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
                             verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
