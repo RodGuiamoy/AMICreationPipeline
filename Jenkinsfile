@@ -217,7 +217,7 @@ pipeline {
                     if (!validInstances.isEmpty()) {
                         def verifiedInstancesStr = "Verified instances:\n"
                         verifiedInstancesStr += "-----------------------\n"
-                        validInstancesWithId.each { instance ->
+                        validInstances.each { instance ->
                             verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
                             verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
                             verifiedInstancesStr += "Region: ${instance.region}\n"
