@@ -49,7 +49,6 @@ def role = ""
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
-def invalidInstances = []
 
 // Variables used in 'ValidateSchedule' and 'ScheduleAMICreation' stages
 String executionDateTimeStr = ""
@@ -140,7 +139,7 @@ pipeline {
                         if (region) {
                             validInstances << new InstanceDetails(instanceName: instanceName, region: region)
                         } else {
-                            invalidInstances << instanceName
+                            invalidInstanceNames << instanceName
                         }
                     }
 
@@ -153,8 +152,8 @@ pipeline {
                     def validInstanceRegionStr = validInstances.collect { it.instanceName + ": " + it.region }.join(', ')
                     echo "Successfully identified a region to the following instances: ${validInstanceRegionStr}"
 
-                    if (invalidInstances) {
-                        unstable("Unable to identify a region to the following instances: ${invalidInstances.join(', ')}")
+                    if (invalidInstanceNames) {
+                        unstable("Unable to identify a region to the following instances: ${invalidInstanceNames.join(', ')}")
                     }
                     
                     // Group instances by region
@@ -186,24 +185,25 @@ pipeline {
                                 if (cliOutputJson.Reservations.isEmpty()) {
                                     // echo "No valid instances entered."
                                     unstable("Instances does not exist in region ${region}.")
-                                } 
+                                }
 
                                 // Parse json output to get instance names and IDs
                                 cliOutputJson.Reservations.each { reservation ->
                                     reservation.Instances.each { instance ->
                                         def instanceId = instance.InstanceId
                                         def instanceNameTag = instance.Tags.find { tag -> tag.Key == 'Name' }
-                                        def instanceName = instanceNameTag ? instanceNameTag.Value : 'Unknown'
-
-                                        // echo "${instanceId}: ${instanceName}"
-
-                                        // update validinstances with instanceID
+                                        def instanceName = instanceNameTag ? instanceNameTag.Value : 'Unknown'                                      
+                                        
                                         validInstances.find { it.instanceName == instanceName && it.region == region }?.instanceId = instanceId
 
                                     }
                                 }
 
-
+                                def nonExistentEc2s = validInstances.findAll { it.region == region && !it.instanceId }
+                                if (!nonExistentEc2s.isEmpty()) {
+                                    def nonExistentEc2Names = nonExistentEc2s.collect { it.instanceName }.join(', ')
+                                    unstable("Non-existent EC2s: ${nonExistentEc2Names}")
+                                }
 
                                 // // Find and display invalid instance names
                                 // def instanceNamesSplit = instanceNames.split(',') 
