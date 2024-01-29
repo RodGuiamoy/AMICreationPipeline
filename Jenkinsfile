@@ -79,7 +79,7 @@ pipeline {
         )
         string(
             name: 'InstanceNames',
-            defaultValue: 'APSPTEST1,APSPTEST2,APAUTEST3', 
+            defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3', 
         )
         string(
             name: 'TicketNumber',
