@@ -315,11 +315,11 @@ pipeline {
                                 def instanceNamesInRegion = instances.collect { it.instanceName }
 
                                 instanceNamesInRegion.each { instance ->
-                                    def instanceId = instance.id
-                                    def instanceName = instance.name
+                                    def instanceId = instance.instanceId
+                                    def instanceName = instance.instanceName
 
                                     echo "${instanceName}: ${instanceName}"
-                                    
+
                                     // // Generate a three character, alphanumeric tag
                                     // def uuid = UUID.randomUUID()
                                     // def uuidString = uuid.toString()
