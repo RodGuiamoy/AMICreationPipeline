@@ -202,7 +202,7 @@ pipeline {
                                 def nonExistentEc2s = validInstances.findAll { it.region == region && !it.instanceId }
                                 if (!nonExistentEc2s.isEmpty()) {
                                     def nonExistentEc2Names = nonExistentEc2s.collect { it.instanceName }.join(', ')
-                                    unstable("Non-existent EC2s: ${nonExistentEc2Names}")
+                                    unstable("Non-existent EC2s for ${region}: ${nonExistentEc2Names}")
                                 }
 
                                 // // Find and display invalid instance names
