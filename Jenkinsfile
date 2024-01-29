@@ -289,71 +289,82 @@ pipeline {
         //         }
         //     }
         // }
-        // stage('CreateAMI') {
-        //     when {
-        //         expression { params.Mode == 'Adhoc'}
-        //     }
-        //     steps {
-        //         script {
+        stage('CreateAMI') {
+            when {
+                expression { params.Mode == 'Adhoc'}
+            }
+            steps {
+                script {
 
-        //             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
-        //                 withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
+                    // Group instances by region
+                    def instancesByRegion = validInstances.groupBy { it.region }
 
-        //                     def ticketNumber = params.TicketNumber
-                            
-        //                     // validInstances = [
-        //                     //     [id: 'TEST1', name: 'name1'],
-        //                     //     [id: 'TEST', name: 'name2']
-        //                     //     // Add more maps as needed
-        //                     // ]
+                    // Iterate over each region and verify instances
+                    instancesByRegion.each { region, instances ->
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
+                            withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
 
-        //                     validInstances.each { instance ->
-        //                         def instanceId = instance.id
-        //                         def instanceName = instance.name
-
-        //                         // Generate a three character, alphanumeric tag
-        //                         def uuid = UUID.randomUUID()
-        //                         def uuidString = uuid.toString()
-        //                         def tag = uuidString[0..2]
+                                def ticketNumber = params.TicketNumber
                                 
-        //                         // Get UTC date
-        //                         def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
-        //                         utcDate = utcDate.readLines().drop(1).join("\n")
+                                // validInstances = [
+                                //     [id: 'TEST1', name: 'name1'],
+                                //     [id: 'TEST', name: 'name2']
+                                //     // Add more maps as needed
+                                // ]
 
-        //                         def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
+                                def instanceNamesInRegion = instances.collect { it.instanceName }
 
-        //                         echo "Creating AMI ${amiName} for ${instanceId}."
+                                instanceNamesInRegion.each { instance ->
+                                    def instanceId = instance.id
+                                    def instanceName = instance.name
 
-        //                         def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
-
-        //                         try {
-        //                             // Executes the AWS CLI command and does some post-processing.
-        //                             // The output includes the command at the top and can't be parsed so we have to drop the first line
-        //                             def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
-        //                             cliOutput = cliOutput.readLines().drop(1).join("\n")
-                                
-        //                             // Parse the CLI output as JSON
-        //                             def jsonSlurper = new groovy.json.JsonSlurper()
-        //                             def cliOutputJson = jsonSlurper.parseText(cliOutput)
-
-        //                             // Check if 'Reservations' is empty
-        //                             if (cliOutputJson.ImageId.isEmpty()) {
-        //                                 unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
-        //                                 return
-        //                             }
-
-        //                             echo "Successfully created AMI ${cliOutputJson.ImageId}."
+                                    echo "${instanceName}: ${instanceName}"
                                     
-        //                         } catch (ex) {
-        //                             // Handle the error without failing the build
-        //                             unstable('Error in creating AMI. Moving on to next EC2 instance.')
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                                    // // Generate a three character, alphanumeric tag
+                                    // def uuid = UUID.randomUUID()
+                                    // def uuidString = uuid.toString()
+                                    // def tag = uuidString[0..2]
+                                    
+                                    // // Get UTC date
+                                    // def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
+                                    // utcDate = utcDate.readLines().drop(1).join("\n")
+
+                                    // def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
+
+                                    // echo "Creating AMI ${amiName} for ${instanceId}."
+
+                                    // def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
+
+                                    // try {
+                                    //     // Executes the AWS CLI command and does some post-processing.
+                                    //     // The output includes the command at the top and can't be parsed so we have to drop the first line
+                                    //     def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
+                                    //     cliOutput = cliOutput.readLines().drop(1).join("\n")
+                                    
+                                    //     // Parse the CLI output as JSON
+                                    //     def jsonSlurper = new groovy.json.JsonSlurper()
+                                    //     def cliOutputJson = jsonSlurper.parseText(cliOutput)
+
+                                    //     // Check if 'Reservations' is empty
+                                    //     if (cliOutputJson.ImageId.isEmpty()) {
+                                    //         unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
+                                    //         return
+                                    //     }
+
+                                    //     echo "Successfully created AMI ${cliOutputJson.ImageId}."
+                                        
+                                    // } catch (ex) {
+                                    //     // Handle the error without failing the build
+                                    //     unstable('Error in creating AMI. Moving on to next EC2 instance.')
+                                    // }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
     }
 }
 
