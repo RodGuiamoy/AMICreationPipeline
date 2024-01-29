@@ -216,7 +216,7 @@ pipeline {
                     }
 
                     // Filter validInstances to get only objects with an instanceId
-                    // def validInstancesWithId = validInstances.findAll { it.instanceId }
+                    def validInstancesWithId = validInstances.findAll { it.instanceId }
                     
                     // // Create a string representation of the validInstances array
                     // def validInstancesStr = validInstancesWithId.collect { it.instanceName + ": " + it.instanceId }.join(', ')
