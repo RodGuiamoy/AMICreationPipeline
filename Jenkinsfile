@@ -163,7 +163,7 @@ pipeline {
                     // Iterate over each region and verify instances
                     instancesByRegion.each { region, instances ->
                         def instanceNamesStr = instances.collect { it.instanceName }.join(', ')
-                        echo "Checking instances in region ${region}. Instance Names: ${instanceNamesStr}"
+                        // echo "Checking instances in region ${region}. Instance Names: ${instanceNamesStr}"
 
                         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
                             withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
