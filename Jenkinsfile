@@ -229,13 +229,16 @@ pipeline {
                     // ]
 
                     if (!validInstancesWithId.isEmpty()) {
-                        echo "Verified instances:"
+                        $verifiedInstancesStr = "Verified instances:\n"
+                        $verifiedInstancesStr += "-----------------------\n"
                         validInstancesWithId.each { instance ->
-                            echo "Instance Name: ${instance.instanceName}"
-                            echo "Instance ID: ${instance.instanceId}"
-                            echo "Region: ${instance.region}"
-                            echo "-----------------------"
+                            $verifiedInstancesStr +=  "Instance Name: ${instance.instanceName}\n"
+                            $verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
+                            $verifiedInstancesStr += "Region: ${instance.region}\n"
                         }
+                        $verifiedInstancesStr += "-----------------------\n"
+
+                        echo "${verifiedInstancesStr}"
                     } else {
                         echo "No verified instances."
                     }
