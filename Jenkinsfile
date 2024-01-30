@@ -215,7 +215,7 @@ pipeline {
 
                     // Displays a summary of valid EC2 instances
                     if (!validInstances.isEmpty()) {
-                        def verifiedInstancesStr = "Verified instances:\n"
+                        def verifiedInstancesStr = "Final list of instances:\n"
                         verifiedInstancesStr += "-----------------------\n"
                         validInstances.each { instance ->
                             verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
@@ -229,66 +229,66 @@ pipeline {
                 }
             }
         }
-        // stage('ValidateSchedule') {
-        //     when {
-        //         expression { params.Mode == 'Scheduled'}
-        //     }
-        //     steps {
-        //         script {
+        stage('ValidateSchedule') {
+            when {
+                expression { params.Mode == 'Scheduled'}
+            }
+            steps {
+                script {
 
-        //              // Specify the future date and time in military time (24-hour format)
-        //             // String futureDateTime = "01/27/2024 14:25"
-        //             executionDateTimeStr = params.Date + ' ' + params.Time
+                     // Specify the future date and time in military time (24-hour format)
+                    // String futureDateTime = "01/27/2024 14:25"
+                    executionDateTimeStr = params.Date + ' ' + params.Time
 
-        //             Date executionDate = null
+                    Date executionDate = null
 
-        //             try {
-        //                 // Parse the future date and time
-        //                 def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-        //                 executionDate = dateFormat.parse(executionDateTimeStr)
-        //             }
-        //             catch (ex) {
-        //                 // Handle the error without failing the build
-        //                 error("Unable to parse DateTime ${executionDateTimeStr}.")
-        //             }
+                    try {
+                        // Parse the future date and time
+                        def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
+                        executionDate = dateFormat.parse(executionDateTimeStr)
+                    }
+                    catch (ex) {
+                        // Handle the error without failing the build
+                        error("Unable to parse DateTime ${executionDateTimeStr}.")
+                    }
                     
-        //             // Get the current date and time
-        //             Date currentDate = new Date()
+                    // Get the current date and time
+                    Date currentDate = new Date()
 
-        //             // Calculate the difference in milliseconds
-        //             long differenceInMillis = executionDate.time - currentDate.time
+                    // Calculate the difference in milliseconds
+                    long differenceInMillis = executionDate.time - currentDate.time
 
-        //             // Convert the difference to seconds
-        //             delaySeconds = differenceInMillis / 1000
+                    // Convert the difference to seconds
+                    delaySeconds = differenceInMillis / 1000
 
-        //             if (delaySeconds < 0) {
-        //                 error ("Scheduled date must be in a future date.")
-        //             }
+                    if (delaySeconds < 0) {
+                        error ("Scheduled date must be in a future date.")
+                    }
 
-        //             echo "Scheduled date ${executionDateTimeStr} is valid."
-        //         }
-        //     }
-        // }
-        // stage('ScheduleAMICreation') {
-        //     when {
-        //         expression { params.Mode == 'Scheduled'}
-        //     }
-        //     steps {
-        //         script {
-        //             echo "Will create scheduled Jenkins build."
+                    echo "Scheduled date ${executionDateTimeStr} is valid."
+                }
+            }
+        }
+        stage('ScheduleAMICreation') {
+            when {
+                expression { params.Mode == 'Scheduled'}
+            }
+            steps {
+                script {
+                    echo "Will create scheduled Jenkins build."
 
-        //             // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
-        //             def scheduledBuildId = UUID.randomUUID()
-        //             scheduledBuildId = scheduledBuildId.toString()
+                    // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
+                    def scheduledBuildId = UUID.randomUUID()
+                    scheduledBuildId = scheduledBuildId.toString()
 
-        //             def validInstancesNameStr = validInstances.collect { it.name }.join(',')
+                    def validInstancesNameStr = validInstances.collect { it.instanceName }.join(',')
                     
-        //             // Example usage
-        //             setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
+                    // Example usage
+                    setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     
-        //         }
-        //     }
-        // }
+                }
+            }
+        }
         stage('CreateAMI') {
             when {
                 expression { params.Mode == 'Adhoc'}
@@ -311,8 +311,6 @@ pipeline {
                                 //     [id: 'TEST', name: 'name2']
                                 //     // Add more maps as needed
                                 // ]
-
-                                // def instanceNamesInRegion = instances.collect { it.instanceName }
 
                                 instances.each { instance ->
                                     def instanceId = instance.instanceId
