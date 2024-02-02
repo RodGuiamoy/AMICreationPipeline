@@ -123,11 +123,12 @@ pipeline {
         )
         string(
             name: 'Date',
-            defaultValue: 'MM/DD/YYYY',
+            //defaultValue: 'MM/DD/YYYY',
+            defaultValue: '02/02/2024',
         )
         string(
             name: 'Time',
-            defaultValue: 'HH:MM',
+            defaultValue: '14:00',
         )
     }
     agent any
@@ -339,7 +340,7 @@ pipeline {
                         }
 
                         // Add the new object to the list
-                        objectsList << newObj
+                        objectsList << newScheduledAMICreationObj
 
                         // Convert the list back to JSON string
                         def newJsonStr = JsonOutput.toJson(objectsList)
