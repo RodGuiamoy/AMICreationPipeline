@@ -306,11 +306,12 @@ pipeline {
         }
         stage('CreateAMI') {
             when {
-                expression { params.Mode == 'On-demand' || params.Mode == 'Express' }
+                expression { params.Mode == 'On-Demand' || params.Mode == 'Express' }
             }
             steps {
                 script {
 
+                    // Generates validInstances array directly from parameters
                     if (params.Mode == 'Express') {
                         def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
                         def instanceIds =  params.InstanceIDs.replaceAll("\\s+", "").split(',')
