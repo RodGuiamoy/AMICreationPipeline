@@ -53,7 +53,7 @@ def setScheduledAMICreation(newObj) {
     if (fileExists(filePath)) {
         // File exists, read the existing content
         def existingContent = readFile(filePath)
-        def jsonSlurper = new JsonSlurper()
+        def jsonSlurper = new groovy.json.JsonSlurper()
         objectsList = jsonSlurper.parseText(existingContent)
     }
 
