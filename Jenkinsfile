@@ -23,60 +23,12 @@ def findRegionByPrefix(String instanceName, List<PrefixRegion> prefixRegions) {
     return null // Return null if no match is found
 }
 
-// def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
-//     // def job = Hudson.instance.getJob('AMICreationPipeline')
-//     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
-
-//     if (job == null) {
-//         throw new IllegalStateException("Job not found: AMICreationPipeline")
-//     }
-
-//     def params = [
-//         new StringParameterValue('Environment', environment),
-//         new StringParameterValue('Region', region),
-//         new StringParameterValue('InstanceNames', instanceNames),
-//         new StringParameterValue('TicketNumber', ticketNumber),
-//         new StringParameterValue('Mode', mode),
-//         new StringParameterValue('ExecutionDateTime', executionDateTime),
-//         new StringParameterValue('ScheduledBuildId', scheduledBuildId)
-//     ]
-
-//     def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
-// }
-
-
 // Function to check if the file exists and is not empty
 def boolean fileExistsAndNotEmpty(String filePath) {
     new File(filePath).with { file ->
         file.exists() && file.length() > 0
     }
 }
-
-// def setScheduledAMICreation(newObj) {
-//     // Specify the file path
-//     def filePath = 'C:\\code\\AMICreationQueueService\\Test.json'
-
-//     // Initialize an empty list for the objects
-//     def objectsList = []
-
-//     // Check if the file exists
-//     if (fileExists(filePath)) {
-//         // File exists, read the existing content
-//         def existingContent = readFile(filePath)
-//         def jsonSlurper = new groovy.json.JsonSlurper()
-//         objectsList = jsonSlurper.parseText(existingContent)
-//     }
-
-//     // Add the new object to the list
-//     objectsList << newObj
-
-//     // Convert the list back to JSON string
-//     def newJsonStr = JsonOutput.toJson(objectsList)
-//     def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
-
-//     // Write the JSON string back to the file
-//     writeFile(file: filePath, text: prettyJsonStr)
-// }
 
 // Variables used in 'GetEnvironmentDetails' stage
 def environment = ""
