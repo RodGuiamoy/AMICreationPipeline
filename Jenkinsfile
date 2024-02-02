@@ -23,26 +23,26 @@ def findRegionByPrefix(String instanceName, List<PrefixRegion> prefixRegions) {
     return null // Return null if no match is found
 }
 
-def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
-    // def job = Hudson.instance.getJob('AMICreationPipeline')
-    def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
+// def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
+//     // def job = Hudson.instance.getJob('AMICreationPipeline')
+//     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
-    if (job == null) {
-        throw new IllegalStateException("Job not found: AMICreationPipeline")
-    }
+//     if (job == null) {
+//         throw new IllegalStateException("Job not found: AMICreationPipeline")
+//     }
 
-    def params = [
-        new StringParameterValue('Environment', environment),
-        new StringParameterValue('Region', region),
-        new StringParameterValue('InstanceNames', instanceNames),
-        new StringParameterValue('TicketNumber', ticketNumber),
-        new StringParameterValue('Mode', mode),
-        new StringParameterValue('ExecutionDateTime', executionDateTime),
-        new StringParameterValue('ScheduledBuildId', scheduledBuildId)
-    ]
+//     def params = [
+//         new StringParameterValue('Environment', environment),
+//         new StringParameterValue('Region', region),
+//         new StringParameterValue('InstanceNames', instanceNames),
+//         new StringParameterValue('TicketNumber', ticketNumber),
+//         new StringParameterValue('Mode', mode),
+//         new StringParameterValue('ExecutionDateTime', executionDateTime),
+//         new StringParameterValue('ScheduledBuildId', scheduledBuildId)
+//     ]
 
-    def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
-}
+//     def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
+// }
 
 
 // Function to check if the file exists and is not empty
@@ -341,23 +341,18 @@ pipeline {
 
                         // Check if the file exists
                         if (fileExistsAndNotEmpty(filePath)) {
-                            // // File exists, read the existing content
-                            // def existingContent = readFile(filePath)
-                            // def jsonSlurperClassic = new groovy.json.JsonSlurperClassic()
-                            // objectsList = jsonSlurperClassic.parseText(existingContent)
-
-                            // Try to parse the existing content, handle potential parsing errors
-
                             // File exists and is not empty, read the existing content
                             def existingContent = new File(filePath).text
                             def jsonSlurperClassic = new JsonSlurperClassic()
 
+                            // Try to parse the existing content, handle potential parsing errors
                             try {
                                 objectsList = jsonSlurperClassic.parseText(existingContent)
                             } catch (Exception e) {
                                 // If parsing fails, initialize objectsList to an empty list
                                 // This handles scenarios where the file content is not valid JSON
-                                objectsList = []
+                                error ("Unable to parse json file. Please check for syntax errors.")
+                                //objectsList = []
                             }
                         }
 
