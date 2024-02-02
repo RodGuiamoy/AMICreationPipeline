@@ -325,8 +325,22 @@ pipeline {
                         for (int i = 0; i < instanceNames.length; i++) {
                             echo "${instanceNames[i]} - ${instanceIds[i]}"
                             
-                            // validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: region)
+                            validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: region)
                         }
+
+                        // Displays a summary of valid EC2 instances
+                        if (!validInstances.isEmpty()) {
+                            def verifiedInstancesStr = "Final list of instances:\n"
+                            verifiedInstancesStr += "-----------------------\n"
+                            validInstances.each { instance ->
+                                verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
+                                verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
+                                verifiedInstancesStr += "Region: ${instance.region}\n"
+                                verifiedInstancesStr += "-----------------------\n"
+                            }
+
+                            echo "${verifiedInstancesStr}"
+                        }  
                     }
 
                     // Group instances by region
