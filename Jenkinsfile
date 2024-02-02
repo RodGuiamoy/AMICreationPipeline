@@ -260,19 +260,6 @@ pipeline {
                     // Filter validInstances to get only objects with an instanceId
                     validInstances = validInstances.findAll { it.instanceId }
 
-                    // Displays a summary of valid EC2 instances
-                    if (!validInstances.isEmpty()) {
-                        def verifiedInstancesStr = "Final list of instances:\n"
-                        verifiedInstancesStr += "-----------------------\n"
-                        validInstances.each { instance ->
-                            verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
-                            verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
-                            verifiedInstancesStr += "Region: ${instance.region}\n"
-                            verifiedInstancesStr += "-----------------------\n"
-                        }
-
-                        echo "${verifiedInstancesStr}"
-                    }                    
                 }
             }
         }
@@ -325,23 +312,24 @@ pipeline {
                             validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: region)
                         }
 
-                        // Displays a summary of valid EC2 instances
-                        if (!validInstances.isEmpty()) {
-                            def verifiedInstancesStr = "Final list of instances:\n"
-                            verifiedInstancesStr += "-----------------------\n"
-                            validInstances.each { instance ->
-                                verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
-                                verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
-                                verifiedInstancesStr += "Region: ${instance.region}\n"
-                                verifiedInstancesStr += "-----------------------\n"
-                            }
-
-                            echo "${verifiedInstancesStr}"
-                        }
-
+                        // Gets AWS account number from paramters
                         account = params.Account
 
                     }
+
+                    // Displays a summary of valid EC2 instances
+                    if (!validInstances.isEmpty()) {
+                        def validInstancesStr = "Final list of instances:\n"
+                        validInstancesStr += "-----------------------\n"
+                        validInstances.each { instance ->
+                            validInstancesStr += "Instance Name: ${instance.instanceName}\n"
+                            validInstancesStr += "Instance ID: ${instance.instanceId}\n"
+                            validInstancesStr += "Region: ${instance.region}\n"
+                            validInstancesStr += "-----------------------\n"
+                        }
+
+                        echo "${validInstancesStr}"
+                    }                    
 
                     // Group instances by region
                     def instancesByRegion = validInstances.groupBy { it.region }
@@ -406,7 +394,6 @@ pipeline {
                             }
                         }
                     }
-
                 }
             }
         }
