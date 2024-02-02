@@ -351,6 +351,8 @@ pipeline {
 
                         objectsList = null
                         jsonSlurper = null
+                        newJsonStr = null
+                        prettyJsonStr = null
                         
                         //setScheduledAMICreation(newScheduledAMICreationObj)
                         // // Example usage
