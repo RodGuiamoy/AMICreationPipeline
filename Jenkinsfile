@@ -73,13 +73,17 @@ pipeline {
             name: 'Environment',
             choices: ['rod_aws','rod_aws_2'],
         )
-        // choice( 
-        //     name: 'Region',
-        //     choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
-        // )
+        choice( 
+            name: 'Region',
+            choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
+        )
         string(
             name: 'InstanceNames',
             defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
+        )
+        string(
+            name: 'InstanceIDs',
+            defaultValue: 'i-123,i-456,i-789', 
         )
         string(
             name: 'TicketNumber',
@@ -293,10 +297,11 @@ pipeline {
 
                     // Iterate over each region and verify instances
                     instancesByRegion.each { region, instances ->
-                        def validInstancesNameStr = instances.collect { it.instanceName }.join(',')
+                        def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
+                        def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
 
                         // Example usage
-                        setDelayedBuild(account, validInstancesNameStr, params.TicketNumber, 'Express', scheduledBuildId, executionDateTimeStr, delaySeconds)
+                        setDelayedBuild(account, validInstancesNamesStr, validInstancesIDsStr, params.TicketNumber, 'Express', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     }
   
                 }
@@ -309,69 +314,80 @@ pipeline {
             steps {
                 script {
 
-                    // Group instances by region
-                    def instancesByRegion = validInstances.groupBy { it.region }
-
-                    // Iterate over each region and verify instances
-                    instancesByRegion.each { region, instances ->
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
-                            withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
-
-                                def ticketNumber = params.TicketNumber
-                                
-                                // validInstances = [
-                                //     [id: 'TEST1', name: 'name1'],
-                                //     [id: 'TEST', name: 'name2']
-                                //     // Add more maps as needed
-                                // ]
-
-                                instances.each { instance ->
-                                    def instanceId = instance.instanceId
-                                    def instanceName = instance.instanceName
-
-                                    // echo "${instanceName}: ${instanceId}"
-
-                                    // Generate a three character, alphanumeric tag
-                                    def uuid = UUID.randomUUID()
-                                    def uuidString = uuid.toString()
-                                    def tag = uuidString[0..2]
-                                    
-                                    // Get UTC date
-                                    def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
-                                    utcDate = utcDate.readLines().drop(1).join("\n")
-
-                                    def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
-
-                                    echo "Creating AMI ${amiName} for ${instanceId}."
-
-                                    def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
-
-                                    try {
-                                        // Executes the AWS CLI command and does some post-processing.
-                                        // The output includes the command at the top and can't be parsed so we have to drop the first line
-                                        def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
-                                        cliOutput = cliOutput.readLines().drop(1).join("\n")
-                                    
-                                        // Parse the CLI output as JSON
-                                        def jsonSlurper = new groovy.json.JsonSlurper()
-                                        def cliOutputJson = jsonSlurper.parseText(cliOutput)
-
-                                        // Check if 'ImageId' is empty
-                                        if (cliOutputJson.ImageId.isEmpty()) {
-                                            unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
-                                            return
-                                        }
-
-                                        echo "Successfully created AMI ${cliOutputJson.ImageId}."
-                                        
-                                    } catch (ex) {
-                                        // Handle the error without failing the build
-                                        unstable('Error in creating AMI. Moving on to next EC2 instance.')
-                                    }
-                                }
-                            }
+                    if (params.Mode == 'Express') {
+                        def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
+                        def instanceIds =  params.InstanceIDs.replaceAll("\\s+", "").split(',')
+                        
+                        for (int i = 0; i < instanceNames.length(); i++) {
+                            echo "${instanceNames[i]} - ${instanceIds[i]}"
+                            
+                            // validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: region)
                         }
                     }
+
+                    // Group instances by region
+                    // def instancesByRegion = validInstances.groupBy { it.region }
+
+                    // // Iterate over each region and verify instances
+                    // instancesByRegion.each { region, instances ->
+                    //     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
+                    //         withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
+
+                    //             def ticketNumber = params.TicketNumber
+                                
+                    //             // validInstances = [
+                    //             //     [id: 'TEST1', name: 'name1'],
+                    //             //     [id: 'TEST', name: 'name2']
+                    //             //     // Add more maps as needed
+                    //             // ]
+
+                    //             instances.each { instance ->
+                    //                 def instanceId = instance.instanceId
+                    //                 def instanceName = instance.instanceName
+
+                    //                 // echo "${instanceName}: ${instanceId}"
+
+                    //                 // Generate a three character, alphanumeric tag
+                    //                 def uuid = UUID.randomUUID()
+                    //                 def uuidString = uuid.toString()
+                    //                 def tag = uuidString[0..2]
+                                    
+                    //                 // Get UTC date
+                    //                 def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
+                    //                 utcDate = utcDate.readLines().drop(1).join("\n")
+
+                    //                 def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
+
+                    //                 echo "Creating AMI ${amiName} for ${instanceId}."
+
+                    //                 def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
+
+                    //                 try {
+                    //                     // Executes the AWS CLI command and does some post-processing.
+                    //                     // The output includes the command at the top and can't be parsed so we have to drop the first line
+                    //                     def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
+                    //                     cliOutput = cliOutput.readLines().drop(1).join("\n")
+                                    
+                    //                     // Parse the CLI output as JSON
+                    //                     def jsonSlurper = new groovy.json.JsonSlurper()
+                    //                     def cliOutputJson = jsonSlurper.parseText(cliOutput)
+
+                    //                     // Check if 'ImageId' is empty
+                    //                     if (cliOutputJson.ImageId.isEmpty()) {
+                    //                         unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
+                    //                         return
+                    //                     }
+
+                    //                     echo "Successfully created AMI ${cliOutputJson.ImageId}."
+                                        
+                    //                 } catch (ex) {
+                    //                     // Handle the error without failing the build
+                    //                     unstable('Error in creating AMI. Moving on to next EC2 instance.')
+                    //                 }
+                    //             }
+                    //         }
+                    //     }
+                    // }
 
                 }
             }
