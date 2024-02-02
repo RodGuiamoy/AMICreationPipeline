@@ -318,7 +318,7 @@ pipeline {
                         def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
                         def instanceIds =  params.InstanceIDs.replaceAll("\\s+", "").split(',')
                         
-                        for (int i = 0; i < instanceNames.length(); i++) {
+                        for (int i = 0; i < instanceNames.count(); i++) {
                             echo "${instanceNames[i]} - ${instanceIds[i]}"
                             
                             // validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: region)
