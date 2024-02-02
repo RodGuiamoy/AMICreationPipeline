@@ -331,12 +331,33 @@ pipeline {
                         // Initialize an empty list for the objects
                         def objectsList = []
 
+                        // Function to check if the file exists and is not empty
+                        boolean fileExistsAndNotEmpty(String filePath) {
+                            new File(filePath).with { file ->
+                                file.exists() && file.length() > 0
+                            }
+                        }
+
                         // Check if the file exists
-                        if (fileExists(filePath)) {
-                            // File exists, read the existing content
-                            def existingContent = readFile(filePath)
-                            def jsonSlurperClassic = new groovy.json.JsonSlurperClassic()
-                            objectsList = jsonSlurperClassic.parseText(existingContent)
+                        if (fileExistsAndNotEmpty(filePath)) {
+                            // // File exists, read the existing content
+                            // def existingContent = readFile(filePath)
+                            // def jsonSlurperClassic = new groovy.json.JsonSlurperClassic()
+                            // objectsList = jsonSlurperClassic.parseText(existingContent)
+
+                            // Try to parse the existing content, handle potential parsing errors
+
+                            // File exists and is not empty, read the existing content
+                            def existingContent = new File(filePath).text
+                            def jsonSlurperClassic = new JsonSlurperClassic()
+
+                            try {
+                                objectsList = jsonSlurperClassic.parseText(existingContent)
+                            } catch (Exception e) {
+                                // If parsing fails, initialize objectsList to an empty list
+                                // This handles scenarios where the file content is not valid JSON
+                                objectsList = []
+                            }
                         }
 
                         // Add the new object to the list
@@ -348,15 +369,6 @@ pipeline {
 
                         // Write the JSON string back to the file
                         writeFile(file: filePath, text: prettyJsonStr)
-
-                        // objectsList = null
-                        // jsonSlurper = null
-                        // newJsonStr = null
-                        // prettyJsonStr = null
-                        
-                        //setScheduledAMICreation(newScheduledAMICreationObj)
-                        // // Example usage
-                        // setDelayedBuild(account, validInstancesNamesStr, validInstancesIDsStr, params.TicketNumber, 'Express', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     }
   
                 }
