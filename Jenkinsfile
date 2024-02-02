@@ -42,6 +42,32 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
     def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
 }
 
+def setScheduledAMICreation(newObj) {
+    // Specify the file path
+    def filePath = 'C:\\code\\AMICreationQueueService\\Test.json'
+
+    // Initialize an empty list for the objects
+    def objectsList = []
+
+    // Check if the file exists
+    if (fileExists(filePath)) {
+        // File exists, read the existing content
+        def existingContent = readFile(filePath)
+        def jsonSlurper = new JsonSlurper()
+        objectsList = jsonSlurper.parseText(existingContent)
+    }
+
+    // Add the new object to the list
+    objectsList << newObj
+
+    // Convert the list back to JSON string
+    def newJsonStr = JsonOutput.toJson(objectsList)
+    def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+    // Write the JSON string back to the file
+    writeFile(file: filePath, text: prettyJsonStr)
+}
+
 // Variables used in 'GetEnvironmentDetails' stage
 def environment = ""
 def account = ""
@@ -284,8 +310,22 @@ pipeline {
                         def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
                         def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
 
-                        // Example usage
-                        setDelayedBuild(account, validInstancesNamesStr, validInstancesIDsStr, params.TicketNumber, 'Express', scheduledBuildId, executionDateTimeStr, delaySeconds)
+                        def newScheduledAMICreationObj =[
+                            'Account': account,
+                            'Region': region,
+                            'InstanceNames': validInstancesNamesStr,
+                            'InstanceIds': validInstancesIDsStr,
+                            'TicketNumber': params.TicketNumber,
+                            'Date': params.Date,
+                            'Time': params.Time,
+                            'Mode': 'Express',
+                            'ScheduledBuildId': scheduledBuildId
+                        ]
+
+
+                        setScheduledAMICreation(newScheduledAMICreationObj)
+                        // // Example usage
+                        // setDelayedBuild(account, validInstancesNamesStr, validInstancesIDsStr, params.TicketNumber, 'Express', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     }
   
                 }
