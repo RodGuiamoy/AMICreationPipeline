@@ -44,31 +44,31 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
     def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
 }
 
-def setScheduledAMICreation(newObj) {
-    // Specify the file path
-    def filePath = 'C:\\code\\AMICreationQueueService\\Test.json'
+// def setScheduledAMICreation(newObj) {
+//     // Specify the file path
+//     def filePath = 'C:\\code\\AMICreationQueueService\\Test.json'
 
-    // Initialize an empty list for the objects
-    def objectsList = []
+//     // Initialize an empty list for the objects
+//     def objectsList = []
 
-    // Check if the file exists
-    if (fileExists(filePath)) {
-        // File exists, read the existing content
-        def existingContent = readFile(filePath)
-        def jsonSlurper = new groovy.json.JsonSlurper()
-        objectsList = jsonSlurper.parseText(existingContent)
-    }
+//     // Check if the file exists
+//     if (fileExists(filePath)) {
+//         // File exists, read the existing content
+//         def existingContent = readFile(filePath)
+//         def jsonSlurper = new groovy.json.JsonSlurper()
+//         objectsList = jsonSlurper.parseText(existingContent)
+//     }
 
-    // Add the new object to the list
-    objectsList << newObj
+//     // Add the new object to the list
+//     objectsList << newObj
 
-    // Convert the list back to JSON string
-    def newJsonStr = JsonOutput.toJson(objectsList)
-    def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+//     // Convert the list back to JSON string
+//     def newJsonStr = JsonOutput.toJson(objectsList)
+//     def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
 
-    // Write the JSON string back to the file
-    writeFile(file: filePath, text: prettyJsonStr)
-}
+//     // Write the JSON string back to the file
+//     writeFile(file: filePath, text: prettyJsonStr)
+// }
 
 // Variables used in 'GetEnvironmentDetails' stage
 def environment = ""
@@ -312,7 +312,7 @@ pipeline {
                         def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
                         def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
 
-                        def newScheduledAMICreationObj =[
+                        def newScheduledAMICreationObj = [
                             'Account': account,
                             'Region': region,
                             'InstanceNames': validInstancesNamesStr,
@@ -325,7 +325,30 @@ pipeline {
                         ]
 
 
-                        setScheduledAMICreation(newScheduledAMICreationObj)
+                        def filePath = 'C:\\code\\AMICreationQueueService\\Test.json'
+
+                        // Initialize an empty list for the objects
+                        def objectsList = []
+
+                        // Check if the file exists
+                        if (fileExists(filePath)) {
+                            // File exists, read the existing content
+                            def existingContent = readFile(filePath)
+                            def jsonSlurper = new groovy.json.JsonSlurper()
+                            objectsList = jsonSlurper.parseText(existingContent)
+                        }
+
+                        // Add the new object to the list
+                        objectsList << newObj
+
+                        // Convert the list back to JSON string
+                        def newJsonStr = JsonOutput.toJson(objectsList)
+                        def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                        // Write the JSON string back to the file
+                        writeFile(file: filePath, text: prettyJsonStr)
+                        
+                        //setScheduledAMICreation(newScheduledAMICreationObj)
                         // // Example usage
                         // setDelayedBuild(account, validInstancesNamesStr, validInstancesIDsStr, params.TicketNumber, 'Express', scheduledBuildId, executionDateTimeStr, delaySeconds)
                     }
@@ -351,7 +374,7 @@ pipeline {
                         
                         for (int i = 0; i < instanceNames.length; i++) {
                             
-                            validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: region)
+                            validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: params.Region)
                         }
 
                         // Gets AWS account number from paramters
