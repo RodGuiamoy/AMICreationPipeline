@@ -45,7 +45,7 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
 // Variables used in 'GetEnvironmentDetails' stage
 def environment = ""
 def account = ""
-def role = ""
+def role = 'AMICreationRole'
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
@@ -152,10 +152,7 @@ pipeline {
             steps {
                 script {
                     environment = params.Environment
-                    
-                    region = params.Region
-                    role = 'AMICreationRole'
-                    
+
                     switch (environment) {
                         case 'rod_aws':
                             account = '554249804926'
@@ -323,7 +320,6 @@ pipeline {
                         }
                         
                         for (int i = 0; i < instanceNames.length; i++) {
-                            echo "${instanceNames[i]} - ${instanceIds[i]}"
                             
                             validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: region)
                         }
@@ -340,72 +336,75 @@ pipeline {
                             }
 
                             echo "${verifiedInstancesStr}"
-                        }  
+                        }
+
+                        account = params.Account
+
                     }
 
                     // Group instances by region
-                    // def instancesByRegion = validInstances.groupBy { it.region }
+                    def instancesByRegion = validInstances.groupBy { it.region }
 
-                    // // Iterate over each region and verify instances
-                    // instancesByRegion.each { region, instances ->
-                    //     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
-                    //         withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
+                    // Iterate over each region and verify instances
+                    instancesByRegion.each { region, instances ->
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'rod_aws']]) {
+                            withAWS(role: role, region: region, roleAccount: account, duration: '3600' ){
 
-                    //             def ticketNumber = params.TicketNumber
+                                def ticketNumber = params.TicketNumber
                                 
-                    //             // validInstances = [
-                    //             //     [id: 'TEST1', name: 'name1'],
-                    //             //     [id: 'TEST', name: 'name2']
-                    //             //     // Add more maps as needed
-                    //             // ]
+                                // validInstances = [
+                                //     [id: 'TEST1', name: 'name1'],
+                                //     [id: 'TEST', name: 'name2']
+                                //     // Add more maps as needed
+                                // ]
 
-                    //             instances.each { instance ->
-                    //                 def instanceId = instance.instanceId
-                    //                 def instanceName = instance.instanceName
+                                instances.each { instance ->
+                                    def instanceId = instance.instanceId
+                                    def instanceName = instance.instanceName
 
-                    //                 // echo "${instanceName}: ${instanceId}"
+                                    // echo "${instanceName}: ${instanceId}"
 
-                    //                 // Generate a three character, alphanumeric tag
-                    //                 def uuid = UUID.randomUUID()
-                    //                 def uuidString = uuid.toString()
-                    //                 def tag = uuidString[0..2]
+                                    // Generate a three character, alphanumeric tag
+                                    def uuid = UUID.randomUUID()
+                                    def uuidString = uuid.toString()
+                                    def tag = uuidString[0..2]
                                     
-                    //                 // Get UTC date
-                    //                 def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
-                    //                 utcDate = utcDate.readLines().drop(1).join("\n")
+                                    // Get UTC date
+                                    def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
+                                    utcDate = utcDate.readLines().drop(1).join("\n")
 
-                    //                 def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
+                                    def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
 
-                    //                 echo "Creating AMI ${amiName} for ${instanceId}."
+                                    echo "Creating AMI ${amiName} for ${instanceId}."
 
-                    //                 def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
+                                    def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
 
-                    //                 try {
-                    //                     // Executes the AWS CLI command and does some post-processing.
-                    //                     // The output includes the command at the top and can't be parsed so we have to drop the first line
-                    //                     def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
-                    //                     cliOutput = cliOutput.readLines().drop(1).join("\n")
+                                    try {
+                                        // Executes the AWS CLI command and does some post-processing.
+                                        // The output includes the command at the top and can't be parsed so we have to drop the first line
+                                        def cliOutput = bat(script: awsCliCommand, returnStdout: true).trim()
+                                        cliOutput = cliOutput.readLines().drop(1).join("\n")
                                     
-                    //                     // Parse the CLI output as JSON
-                    //                     def jsonSlurper = new groovy.json.JsonSlurper()
-                    //                     def cliOutputJson = jsonSlurper.parseText(cliOutput)
+                                        // Parse the CLI output as JSON
+                                        def jsonSlurper = new groovy.json.JsonSlurper()
+                                        def cliOutputJson = jsonSlurper.parseText(cliOutput)
 
-                    //                     // Check if 'ImageId' is empty
-                    //                     if (cliOutputJson.ImageId.isEmpty()) {
-                    //                         unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
-                    //                         return
-                    //                     }
+                                        // Check if 'ImageId' is empty
+                                        if (cliOutputJson.ImageId.isEmpty()) {
+                                            unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
+                                            return
+                                        }
 
-                    //                     echo "Successfully created AMI ${cliOutputJson.ImageId}."
+                                        echo "Successfully created AMI ${cliOutputJson.ImageId}."
                                         
-                    //                 } catch (ex) {
-                    //                     // Handle the error without failing the build
-                    //                     unstable('Error in creating AMI. Moving on to next EC2 instance.')
-                    //                 }
-                    //             }
-                    //         }
-                    //     }
-                    // }
+                                    } catch (ex) {
+                                        // Handle the error without failing the build
+                                        unstable('Error in creating AMI. Moving on to next EC2 instance.')
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                 }
             }
