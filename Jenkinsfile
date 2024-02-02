@@ -348,6 +348,9 @@ pipeline {
 
                         // Write the JSON string back to the file
                         writeFile(file: filePath, text: prettyJsonStr)
+
+                        objectsList = null
+                        jsonSlurper = null
                         
                         //setScheduledAMICreation(newScheduledAMICreationObj)
                         // // Example usage
