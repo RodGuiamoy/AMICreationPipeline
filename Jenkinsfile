@@ -349,9 +349,9 @@ pipeline {
                             try {
                                 objectsList = jsonSlurperClassic.parseText(existingContent)
                             } catch (Exception e) {
-                                // If parsing fails, initialize objectsList to an empty list
-                                // This handles scenarios where the file content is not valid JSON
+                                echo "Unable to parse"
                                 error ("Unable to parse json file. Please check for syntax errors.")
+                                
                                 //objectsList = []
                             }
                         }
