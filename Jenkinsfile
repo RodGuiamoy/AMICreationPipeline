@@ -73,10 +73,10 @@ pipeline {
             name: 'Environment',
             choices: ['rod_aws','rod_aws_2'],
         )
-        choice( 
-            name: 'Region',
-            choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
-        )
+        // choice( 
+        //     name: 'Region',
+        //     choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
+        // )
         string(
             name: 'InstanceNames',
             defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
@@ -87,7 +87,7 @@ pipeline {
         )
         choice( 
             name: 'Mode',
-            choices: ['Adhoc','Scheduled'],
+            choices: ['On-Demand','Scheduled','Express'],
         )
         string(
             name: 'Date',
@@ -101,7 +101,50 @@ pipeline {
     agent any
 
     stages {
+        stage('ValidateRequestedSchedule') {
+            when {
+                expression { params.Mode == 'Scheduled'}
+            }
+            steps {
+                script {
+
+                     // Specify the future date and time in military time (24-hour format)
+                    // String futureDateTime = "01/27/2024 14:25"
+                    executionDateTimeStr = params.Date + ' ' + params.Time
+
+                    Date executionDate = null
+
+                    try {
+                        // Parse the future date and time
+                        def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
+                        executionDate = dateFormat.parse(executionDateTimeStr)
+                    }
+                    catch (ex) {
+                        // Handle the error without failing the build
+                        error("Unable to parse DateTime ${executionDateTimeStr}.")
+                    }
+                    
+                    // Get the current date and time
+                    Date currentDate = new Date()
+
+                    // Calculate the difference in milliseconds
+                    long differenceInMillis = executionDate.time - currentDate.time
+
+                    // Convert the difference to seconds
+                    delaySeconds = differenceInMillis / 1000
+
+                    if (delaySeconds < 0) {
+                        error ("Scheduled date must be in a future date.")
+                    }
+
+                    echo "Scheduled date ${executionDateTimeStr} is valid."
+                }
+            }
+        }
         stage('GetEnvironmentDetails') {
+            when {
+                expression { params.Mode != 'Express'}
+            }
             steps {
                 script {
                     environment = params.Environment
@@ -127,6 +170,9 @@ pipeline {
 
         }
         stage('ValidateEC2') {
+            when {
+                expression { params.Mode != 'Express'}
+            }
             steps {
                 script {
 
@@ -229,46 +275,7 @@ pipeline {
                 }
             }
         }
-        stage('ValidateSchedule') {
-            when {
-                expression { params.Mode == 'Scheduled'}
-            }
-            steps {
-                script {
 
-                     // Specify the future date and time in military time (24-hour format)
-                    // String futureDateTime = "01/27/2024 14:25"
-                    executionDateTimeStr = params.Date + ' ' + params.Time
-
-                    Date executionDate = null
-
-                    try {
-                        // Parse the future date and time
-                        def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-                        executionDate = dateFormat.parse(executionDateTimeStr)
-                    }
-                    catch (ex) {
-                        // Handle the error without failing the build
-                        error("Unable to parse DateTime ${executionDateTimeStr}.")
-                    }
-                    
-                    // Get the current date and time
-                    Date currentDate = new Date()
-
-                    // Calculate the difference in milliseconds
-                    long differenceInMillis = executionDate.time - currentDate.time
-
-                    // Convert the difference to seconds
-                    delaySeconds = differenceInMillis / 1000
-
-                    if (delaySeconds < 0) {
-                        error ("Scheduled date must be in a future date.")
-                    }
-
-                    echo "Scheduled date ${executionDateTimeStr} is valid."
-                }
-            }
-        }
         stage('ScheduleAMICreation') {
             when {
                 expression { params.Mode == 'Scheduled'}
@@ -281,17 +288,23 @@ pipeline {
                     def scheduledBuildId = UUID.randomUUID()
                     scheduledBuildId = scheduledBuildId.toString()
 
-                    def validInstancesNameStr = validInstances.collect { it.instanceName }.join(',')
-                    
-                    // Example usage
-                    setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
-                    
+                    // Group instances by region
+                    def instancesByRegion = validInstances.groupBy { it.region }
+
+                    // Iterate over each region and verify instances
+                    instancesByRegion.each { region, instances ->
+                        def validInstancesNameStr = instances.collect { it.instanceName }.join(',')
+
+                        // Example usage
+                        setDelayedBuild(account, validInstancesNameStr, params.TicketNumber, 'Express', scheduledBuildId, executionDateTimeStr, delaySeconds)
+                    }
+  
                 }
             }
         }
         stage('CreateAMI') {
             when {
-                expression { params.Mode == 'Adhoc'}
+                expression { params.Mode == 'On-demand' || params.Mode == 'Express' }
             }
             steps {
                 script {
