@@ -89,6 +89,7 @@ def validInstances = []
 // Variables used in 'ValidateSchedule' and 'ScheduleAMICreation' stages
 String executionDateTimeStr = ""
 int delaySeconds = 0
+def queueFilePath = 'C:\\code\\AMICreationQueueService\\Test.json'
 
 // Example array of PrefixRegion objects
 def prefixRegions = [
@@ -307,11 +308,6 @@ pipeline {
             }
             steps {
                 script {
-                    echo "Will create scheduled Jenkins build."
-
-                    // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
-                    def scheduledBuildId = UUID.randomUUID()
-                    scheduledBuildId = scheduledBuildId.toString()
 
                     // Group instances by region
                     def instancesByRegion = validInstances.groupBy { it.region }
@@ -320,6 +316,10 @@ pipeline {
                     instancesByRegion.each { region, instances ->
                         def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
                         def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
+
+                        // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
+                        def scheduledBuildId = UUID.randomUUID()
+                        scheduledBuildId = scheduledBuildId.toString()
 
                         def newScheduledAMICreationObj = [
                             'Account': account,
@@ -333,26 +333,22 @@ pipeline {
                             'ScheduledBuildId': scheduledBuildId
                         ]
 
-
-                        def filePath = 'C:\\code\\AMICreationQueueService\\Test.json'
-
                         // Initialize an empty list for the objects
                         def objectsList = []
 
                         // Check if the file exists
-                        if (fileExistsAndNotEmpty(filePath)) {
+                        if (fileExistsAndNotEmpty(queueFilePath)) {
                             // File exists and is not empty, read the existing content
-                            def existingContent = new File(filePath).text
+                            def existingContent = new File(queueFilePath).text
                             def jsonSlurperClassic = new JsonSlurperClassic()
 
                             // Try to parse the existing content, handle potential parsing errors
                             try {
                                 objectsList = jsonSlurperClassic.parseText(existingContent)
                             } catch (Exception e) {
-                                echo "Unable to parse"
+
                                 error ("Unable to parse json file. Please check for syntax errors.")
                                 
-                                //objectsList = []
                             }
                         }
 
@@ -364,7 +360,20 @@ pipeline {
                         def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
 
                         // Write the JSON string back to the file
-                        writeFile(file: filePath, text: prettyJsonStr)
+                        writeFile(file: queueFilePath, text: prettyJsonStr)
+
+                        def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
+                        newScheduledAMICreationObjStr += "ScheduledBuildId: ${newScheduledAMICreationObj.ScheduledBuildId}\n"
+                        newScheduledAMICreationObjStr += "Account: ${newScheduledAMICreationObj.Account}\n"
+                        newScheduledAMICreationObjStr += "Region: ${newScheduledAMICreationObj.Region}\n"
+                        newScheduledAMICreationObjStr += "InstanceNames: ${newScheduledAMICreationObj.InstanceNames}\n"
+                        newScheduledAMICreationObjStr += "InstanceIds: ${newScheduledAMICreationObj.InstanceIds}\n"
+                        newScheduledAMICreationObjStr += "TicketNumber: ${newScheduledAMICreationObj.TicketNumber}\n"
+                        newScheduledAMICreationObjStr += "Date: ${newScheduledAMICreationObj.Date}\n"
+                        newScheduledAMICreationObjStr += "Time: ${newScheduledAMICreationObj.Time}\n"
+                    
+                        echo "${validInstancesStr}"
+
                     }
   
                 }
