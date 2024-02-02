@@ -1,5 +1,5 @@
 import java.util.UUID
-import groovy.json.JsonSlurper
+import groovy.json.JsonSlurperClassic
 import groovy.json.JsonOutput
 
 class PrefixRegion {
@@ -335,8 +335,8 @@ pipeline {
                         if (fileExists(filePath)) {
                             // File exists, read the existing content
                             def existingContent = readFile(filePath)
-                            def jsonSlurper = new groovy.json.JsonSlurper()
-                            objectsList = jsonSlurper.parseText(existingContent)
+                            def jsonSlurperClassic = new groovy.json.JsonSlurperClassic()
+                            objectsList = jsonSlurperClassic.parseText(existingContent)
                         }
 
                         // Add the new object to the list
@@ -349,10 +349,10 @@ pipeline {
                         // Write the JSON string back to the file
                         writeFile(file: filePath, text: prettyJsonStr)
 
-                        objectsList = null
-                        jsonSlurper = null
-                        newJsonStr = null
-                        prettyJsonStr = null
+                        // objectsList = null
+                        // jsonSlurper = null
+                        // newJsonStr = null
+                        // prettyJsonStr = null
                         
                         //setScheduledAMICreation(newScheduledAMICreationObj)
                         // // Example usage
