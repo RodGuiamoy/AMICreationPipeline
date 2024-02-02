@@ -372,7 +372,7 @@ pipeline {
                         newScheduledAMICreationObjStr += "Date: ${newScheduledAMICreationObj.Date}\n"
                         newScheduledAMICreationObjStr += "Time: ${newScheduledAMICreationObj.Time}\n"
                     
-                        echo "${validInstancesStr}"
+                        echo "${newScheduledAMICreationObjStr}"
 
                     }
   
