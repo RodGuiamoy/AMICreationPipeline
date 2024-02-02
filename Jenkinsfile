@@ -317,6 +317,10 @@ pipeline {
                     if (params.Mode == 'Express') {
                         def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
                         def instanceIds =  params.InstanceIDs.replaceAll("\\s+", "").split(',')
+
+                        if (instanceNames.length != instanceIds.length) {
+                            error ("The count of Instances names and IDs does not match.")
+                        }
                         
                         for (int i = 0; i < instanceNames.length; i++) {
                             echo "${instanceNames[i]} - ${instanceIds[i]}"
