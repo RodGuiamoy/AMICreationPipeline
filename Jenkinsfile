@@ -44,6 +44,14 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
     def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
 }
 
+
+// Function to check if the file exists and is not empty
+def boolean fileExistsAndNotEmpty(String filePath) {
+    new File(filePath).with { file ->
+        file.exists() && file.length() > 0
+    }
+}
+
 // def setScheduledAMICreation(newObj) {
 //     // Specify the file path
 //     def filePath = 'C:\\code\\AMICreationQueueService\\Test.json'
@@ -330,13 +338,6 @@ pipeline {
 
                         // Initialize an empty list for the objects
                         def objectsList = []
-
-                        // Function to check if the file exists and is not empty
-                        boolean fileExistsAndNotEmpty(String filePath) {
-                            new File(filePath).with { file ->
-                                file.exists() && file.length() > 0
-                            }
-                        }
 
                         // Check if the file exists
                         if (fileExistsAndNotEmpty(filePath)) {
