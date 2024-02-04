@@ -277,7 +277,7 @@ pipeline {
                             'Account': account,
                             'Region': region,
                             'InstanceNames': validInstancesNamesStr,
-                            'InstanceIds': validInstancesIDsStr,
+                            'InstanceIDs': validInstancesIDsStr,
                             'TicketNumber': params.TicketNumber,
                             'Date': params.Date,
                             'Time': params.Time,
@@ -319,7 +319,7 @@ pipeline {
                         newScheduledAMICreationObjStr += "Account: ${newScheduledAMICreationObj.Account}\n"
                         newScheduledAMICreationObjStr += "Region: ${newScheduledAMICreationObj.Region}\n"
                         newScheduledAMICreationObjStr += "InstanceNames: ${newScheduledAMICreationObj.InstanceNames}\n"
-                        newScheduledAMICreationObjStr += "InstanceIds: ${newScheduledAMICreationObj.InstanceIds}\n"
+                        newScheduledAMICreationObjStr += "InstanceIDs: ${newScheduledAMICreationObj.InstanceIDs}\n"
                         newScheduledAMICreationObjStr += "TicketNumber: ${newScheduledAMICreationObj.TicketNumber}\n"
                         newScheduledAMICreationObjStr += "Date: ${newScheduledAMICreationObj.Date}\n"
                         newScheduledAMICreationObjStr += "Time: ${newScheduledAMICreationObj.Time}\n"
@@ -341,15 +341,15 @@ pipeline {
                     // Generates validInstances array directly from parameters
                     if (params.Mode == 'Express') {
                         def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
-                        def instanceIds =  params.InstanceIDs.replaceAll("\\s+", "").split(',')
+                        def instanceIDs =  params.InstanceIDs.replaceAll("\\s+", "").split(',')
 
-                        if (instanceNames.length != instanceIds.length) {
+                        if (instanceNames.length != instanceIDs.length) {
                             error ("The count of Instances names and IDs does not match.")
                         }
                         
                         for (int i = 0; i < instanceNames.length; i++) {
                             
-                            validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIds[i], region: params.Region)
+                            validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIDs[i], region: params.Region)
                         }
 
                         // Gets AWS account number from paramters
