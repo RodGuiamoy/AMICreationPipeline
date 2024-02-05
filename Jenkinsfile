@@ -270,7 +270,7 @@ pipeline {
                         def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
 
                         // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
-                        def scheduledBuildId = UUID.randomUUID()
+                        scheduledBuildId = UUID.randomUUID()
                         scheduledBuildId = scheduledBuildId.toString()
 
                         def newScheduledAMICreationObj = [
