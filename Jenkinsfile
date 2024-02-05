@@ -34,6 +34,7 @@ def boolean fileExistsAndNotEmpty(String filePath) {
 def environment = ""
 def account = ""
 def role = 'AMICreationRole'
+def scheduledBuildId = ""
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
@@ -95,7 +96,7 @@ pipeline {
     agent any
 
     stages {
-        stage('ValidateRequestedSchedule') {
+        stage('ValidateSchedule') {
             when {
                 expression { params.Mode == 'Scheduled'}
             }
@@ -103,7 +104,7 @@ pipeline {
                 script {
 
                      // Specify the future date and time in military time (24-hour format)
-                    // String futureDateTime = "01/27/2024 14:25"
+                    // e.g. "01/27/2024 14:25"
                     executionDateTimeStr = params.Date + ' ' + params.Time
 
                     Date executionDate = null
@@ -151,10 +152,10 @@ pipeline {
                             account = '992382788789'
                             break
                         default:
-                            error("No matching environment details found that matches \"${environment}\". Exiting pipeline.")
+                            error("No matching environment details found that matches \"${environment}\".")
                     }
 
-                    echo "Successfully retrieved environment details for environment \"${environment}\""                   
+                    echo "Successfully retrieved environment details for environment \"${environment}\"."                   
 
                 }
             }
@@ -253,7 +254,6 @@ pipeline {
                 }
             }
         }
-
         stage('ScheduleAMICreation') {
             when {
                 expression { params.Mode == 'Scheduled'}
@@ -354,6 +354,7 @@ pipeline {
 
                         // Gets AWS account number from paramters
                         account = params.Account
+                        scheduledBuildId = params.ScheduledBuildId
 
                     }
 
@@ -436,6 +437,41 @@ pipeline {
                     }
                 }
             }
+        }
+        stage('CleanUp') {
+            when {
+                expression { params.Mode == 'Express'}
+            }
+
+            // Initialize an empty list for the objects
+            def objectsList = []
+
+            // Check if the file exists
+            if (fileExistsAndNotEmpty(queueFilePath)) {
+                // File exists and is not empty, read the existing content
+                def existingContent = new File(queueFilePath).text
+                def jsonSlurperClassic = new JsonSlurperClassic()
+
+                // Try to parse the existing content, handle potential parsing errors
+                try {
+                    objectsList = jsonSlurperClassic.parseText(existingContent)
+                } catch (Exception e) {
+
+                    error ("Unable to parse json file. Please check for syntax errors.")
+                }
+            }
+
+            // Filter the array to remove the object with the specified ID
+            objectsList = objectsList.findAll { it.ScheduledBuildId != scheduledBuildId }
+
+            // Convert the list back to JSON string
+            def newJsonStr = JsonOutput.toJson(objectsList)
+            def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+            // Write the JSON string back to the file
+            writeFile(file: queueFilePath, text: prettyJsonStr)
+
+            echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${scheduledBuildId}."
         }
     }
 }
