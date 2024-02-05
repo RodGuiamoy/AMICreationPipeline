@@ -443,35 +443,40 @@ pipeline {
                 expression { params.Mode == 'Express'}
             }
 
-            // Initialize an empty list for the objects
-            def objectsList = []
+            steps {
+                script {
+                    // Initialize an empty list for the objects
+                    def objectsList = []
 
-            // Check if the file exists
-            if (fileExistsAndNotEmpty(queueFilePath)) {
-                // File exists and is not empty, read the existing content
-                def existingContent = new File(queueFilePath).text
-                def jsonSlurperClassic = new JsonSlurperClassic()
+                    // Check if the file exists
+                    if (fileExistsAndNotEmpty(queueFilePath)) {
+                        // File exists and is not empty, read the existing content
+                        def existingContent = new File(queueFilePath).text
+                        def jsonSlurperClassic = new JsonSlurperClassic()
 
-                // Try to parse the existing content, handle potential parsing errors
-                try {
-                    objectsList = jsonSlurperClassic.parseText(existingContent)
-                } catch (Exception e) {
+                        // Try to parse the existing content, handle potential parsing errors
+                        try {
+                            objectsList = jsonSlurperClassic.parseText(existingContent)
+                        } catch (Exception e) {
 
-                    error ("Unable to parse json file. Please check for syntax errors.")
+                            error ("Unable to parse json file. Please check for syntax errors.")
+                        }
+                    }
+
+                    // Filter the array to remove the object with the specified ID
+                    objectsList = objectsList.findAll { it.ScheduledBuildId != scheduledBuildId }
+
+                    // Convert the list back to JSON string
+                    def newJsonStr = JsonOutput.toJson(objectsList)
+                    def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                    // Write the JSON string back to the file
+                    writeFile(file: queueFilePath, text: prettyJsonStr)
+
+                    echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${scheduledBuildId}."
                 }
             }
-
-            // Filter the array to remove the object with the specified ID
-            objectsList = objectsList.findAll { it.ScheduledBuildId != scheduledBuildId }
-
-            // Convert the list back to JSON string
-            def newJsonStr = JsonOutput.toJson(objectsList)
-            def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
-
-            // Write the JSON string back to the file
-            writeFile(file: queueFilePath, text: prettyJsonStr)
-
-            echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${scheduledBuildId}."
+            
         }
     }
 }
