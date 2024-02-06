@@ -255,6 +255,11 @@ pipeline {
                     // Filter validInstances to get only objects with an instanceId
                     validInstances = validInstances.findAll { it.instanceId }
 
+                    // Exit the pipeline if there are no valid instances
+                    if (validInstances.isEmpty()) {
+                        error("None of the instances entered exists. Please verify that the correct account alias and EC2 instance names have been entered. Exiting the pipeline.")
+                    }
+
                 }
             }
         }
