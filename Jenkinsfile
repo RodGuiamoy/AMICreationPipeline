@@ -2,8 +2,8 @@ import java.util.UUID
 import groovy.json.JsonSlurperClassic
 import groovy.json.JsonOutput
 
-class PrefixRegion {
-    String prefix
+class RegionCode {
+    String code
     String region
 }
 
@@ -14,10 +14,10 @@ class InstanceDetails {
 }
 
 // Function to find region by prefix
-def findRegionByPrefix(String instanceName, List<PrefixRegion> prefixRegions) {
-    for (pr in prefixRegions) {
-        if (instanceName.startsWith(pr.prefix)) {
-            return pr.region
+def findRegionNonGOSS(String instanceName, List<RegionCode> regionCodes) {
+    for (regionCode in regionCodes) {
+        if (instanceName.startsWith(regionCode.Code)) {
+            return regionCode.region
         }
     }
     return null // Return null if no match is found
@@ -45,16 +45,16 @@ int delaySeconds = 0
 def queueFilePath = 'C:\\code\\AMICreationQueueService\\Test.json'
 
 // Example array of PrefixRegion objects
-def prefixRegions = [
-    new PrefixRegion(prefix: "USEA", region: "us-east-1"),
-    new PrefixRegion(prefix: "USWE", region: "us-west-1"),
-    new PrefixRegion(prefix: "EUCE", region: "eu-central-1"),
-    new PrefixRegion(prefix: "EUWE", region: "eu-west-1"),
-    new PrefixRegion(prefix: "APAU", region: "ap-southeast-2"),
-    new PrefixRegion(prefix: "APSP", region: "ap-southeast-1"),
-    new PrefixRegion(prefix: "UOUE", region: "us-east-1"),
-    new PrefixRegion(prefix: "UOUW", region: "us-west-1"),
-    new PrefixRegion(prefix: "CACE", region: "ca-central-1")
+def regionCodesNonGoss = [
+    new RegionCode(code: "USEA", region: "us-east-1"),
+    new RegionCode(code: "USWE", region: "us-west-1"),
+    new RegionCode(code: "EUCE", region: "eu-central-1"),
+    new RegionCode(code: "EUWE", region: "eu-west-1"),
+    new RegionCode(code: "APAU", region: "ap-southeast-2"),
+    new RegionCode(code: "APSP", region: "ap-southeast-1"),
+    new RegionCode(code: "UOUE", region: "us-east-1"),
+    new RegionCode(code: "UOUW", region: "us-west-1"),
+    new RegionCode(code: "CACE", region: "ca-central-1")
 ]
 
 pipeline {
@@ -176,15 +176,21 @@ pipeline {
                     def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split('\n')
                     def invalidInstanceNames = []
 
-                    // Populate valid and invalid instances arrays
-                    instanceNames.each { instanceName ->
-                        def region = findRegionByPrefix(instanceName, prefixRegions)
-                        if (region) {
-                            validInstances << new InstanceDetails(instanceName: instanceName, region: region)
-                        } else {
-                            invalidInstanceNames << instanceName
+                    if (environment == "Global-OSS") {
+
+                    }
+                    else if (environment != "Global-OSS") {
+                        // Populate valid and invalid instances arrays
+                        instanceNames.each { instanceName ->
+                            def region = findRegionNonGOSS(instanceName, regionCodesNonGoss)
+                            if (region) {
+                                validInstances << new InstanceDetails(instanceName: instanceName, region: region)
+                            } else {
+                                invalidInstanceNames << instanceName
+                            }
                         }
                     }
+
 
                     // Exit the pipeline if there are no valid instances
                     if (validInstances.isEmpty()) {
