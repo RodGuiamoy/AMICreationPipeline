@@ -173,7 +173,8 @@ pipeline {
                 script {
 
                     // removes whitespaces from instance names and splits them
-                    def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split('\n')
+                    //def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split('\n')
+                    def instanceNames = params.InstanceNames.split('\n')
                     def invalidInstanceNames = []
 
                     if (environment == "Global-OSS") {
