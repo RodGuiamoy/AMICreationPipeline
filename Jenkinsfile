@@ -67,10 +67,10 @@ pipeline {
             name: 'Region',
             choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
         )
-        string(
-            name: 'InstanceNames',
-            defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
-        )
+        // string(
+        //     name: 'InstanceNames',
+        //     defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
+        // )
         text(
             name: 'InstanceNames', 
             defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
@@ -173,7 +173,7 @@ pipeline {
                 script {
 
                     // removes whitespaces from instance names and splits them
-                    def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
+                    def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split('\n')
                     def invalidInstanceNames = []
 
                     // Populate valid and invalid instances arrays
