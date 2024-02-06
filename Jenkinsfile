@@ -13,7 +13,20 @@ class InstanceDetails {
     String region
 }
 
-// Function to find region by prefix
+// Function to find region by prefix for GOSS
+def findRegionGOSS(String instanceName, List<RegionCode> regionCodes) {
+    if (instanceName.length() >= 8) { // Make sure instanceName has at least 8 characters
+        String substring = instanceName.substring(4, 8); // Extract the 5th to 8th characters
+        for (RegionCode regionCode : regionCodes) {
+            if (substring.equals(regionCode.code)) {
+                return regionCode.region;
+            }
+        }
+    }
+    return null; // Return null if no match is found or if instanceName is too short
+}
+
+// Function to find region by prefix for non-goss AWS accounts
 def findRegionNonGOSS(String instanceName, List<RegionCode> regionCodes) {
     for (regionCode in regionCodes) {
         if (instanceName.startsWith(regionCode.code)) {
@@ -44,7 +57,16 @@ String executionDateTimeStr = ""
 int delaySeconds = 0
 def queueFilePath = 'C:\\code\\AMICreationQueueService\\Test.json'
 
-// Example array of PrefixRegion objects
+def regionCodesGoss = [
+    new RegionCode(code: "ASE1", region: "ap-southeast-1"),
+    new RegionCode(code: "ASE2", region: "ap-southeast-2"),
+    new RegionCode(code: "CAC1", region: "ca-central-1"),
+    new RegionCode(code: "EUC1", region: "eu-central-1"),
+    new RegionCode(code: "EUW1", region: "eu-west-1"),
+    new RegionCode(code: "USE1", region: "us-east-1"),
+    new RegionCode(code: "USW2", region: "us-west-2")
+]
+
 def regionCodesNonGoss = [
     new RegionCode(code: "USEA", region: "us-east-1"),
     new RegionCode(code: "USWE", region: "us-west-1"),
@@ -61,16 +83,12 @@ pipeline {
     parameters {
         choice(
             name: 'Environment',
-            choices: ['rod_aws','rod_aws_2'],
+            choices: ['rod_aws','rod_aws_2','Global-OSS'],
         )
         choice( 
             name: 'Region',
             choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
         )
-        // string(
-        //     name: 'InstanceNames',
-        //     defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
-        // )
         text(
             name: 'InstanceNames', 
             defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
@@ -155,6 +173,9 @@ pipeline {
                         case 'rod_aws_2':
                             account = '992382788789'
                             break
+                        case 'Global-OSS':
+                            account = '554249804926'
+                            break
                         default:
                             error("No matching environment details found that matches \"${environment}\".")
                     }
@@ -178,7 +199,15 @@ pipeline {
                     def invalidInstanceNames = []
 
                     if (environment == "Global-OSS") {
-
+                        // Populate valid and invalid instances arrays
+                        instanceNames.each { instanceName ->
+                            def region = findRegionGOSS(instanceName, regionCodesGoss)
+                            if (region) {
+                                validInstances << new InstanceDetails(instanceName: instanceName, region: region)
+                            } else {
+                                invalidInstanceNames << instanceName
+                            }
+                        }
                     }
                     else if (environment != "Global-OSS") {
                         // Populate valid and invalid instances arrays
