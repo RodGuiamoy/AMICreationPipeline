@@ -15,8 +15,10 @@ class InstanceDetails {
 
 // Function to find region by prefix for GOSS
 def findRegionGOSS(String instanceName, List<RegionCode> regionCodes) {
-    if (instanceName.length() >= 8) { // Make sure instanceName has at least 8 characters
+    if (instanceName.length() >= 8) { 
+        // Make sure instanceName has at least 8 characters
         String substring = instanceName.substring(4, 8); // Extract the 5th to 8th characters
+        echo "${substring}" 
         for (RegionCode regionCode : regionCodes) {
             if (substring.equals(regionCode.code)) {
                 return regionCode.region;
