@@ -71,6 +71,10 @@ pipeline {
             name: 'InstanceNames',
             defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
         )
+        text(
+            name: 'InstanceNames', 
+            defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
+        )
         string(
             name: 'InstanceIDs',
             defaultValue: 'i-123,i-456,i-789', 
