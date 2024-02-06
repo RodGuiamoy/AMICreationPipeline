@@ -20,7 +20,7 @@ def findRegionGOSS(String instanceName, List<RegionCode> regionCodes) {
         String substring = instanceName.substring(4, 8); // Extract the 5th to 8th characters
         echo "${substring}" 
         for (RegionCode regionCode : regionCodes) {
-            if (substring.equals(regionCode.code)) {
+            if (substring.equalsIgnoreCase(regionCode.code)) {
                 return regionCode.region;
             }
         }
@@ -31,7 +31,7 @@ def findRegionGOSS(String instanceName, List<RegionCode> regionCodes) {
 // Function to find region by prefix for non-goss AWS accounts
 def findRegionNonGOSS(String instanceName, List<RegionCode> regionCodes) {
     for (regionCode in regionCodes) {
-        if (instanceName.startsWith(regionCode.code)) {
+        if (instanceName.toUpperCase().startsWith(regionCode.code)) {
             return regionCode.region
         }
     }
