@@ -16,7 +16,7 @@ class InstanceDetails {
 // Function to find region by prefix
 def findRegionNonGOSS(String instanceName, List<RegionCode> regionCodes) {
     for (regionCode in regionCodes) {
-        if (instanceName.startsWith(regionCode.Code)) {
+        if (instanceName.startsWith(regionCode.code)) {
             return regionCode.region
         }
     }
