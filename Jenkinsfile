@@ -38,6 +38,29 @@ def findRegionNonGOSS(String instanceName, List<RegionCode> regionCodes) {
     return null // Return null if no match is found
 }
 
+def queueAMICreation(scheduledBuildId, account, instanceNames, instanceIDs, region, ticketNumber, mode,  date, time, secondsFromNow) {
+    // def job = Hudson.instance.getJob('AMICreationPipeline')
+    def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
+
+    if (job == null) {
+        throw new IllegalStateException("Job not found: AMICreationPipeline")
+    }
+
+    def params = [
+        new StringParameterValue('Account', account),
+        new StringParameterValue('InstanceNames', instanceNames),
+        new StringParameterValue('InstanceIDs', instanceIDs),
+        new StringParameterValue('Region', region),
+        new StringParameterValue('TicketNumber', ticketNumber),
+        new StringParameterValue('Mode', mode),
+        new StringParameterValue('Date', date),
+        new StringParameterValue('Time', time),
+        new StringParameterValue('ScheduledBuildId', scheduledBuildId)
+    ]
+
+    def future = job.scheduleBuild2(secondsFromNow, new ParametersAction(params))
+}
+
 // Function to check if the file exists and is not empty
 def boolean fileExistsAndNotEmpty(String filePath) {
     new File(filePath).with { file ->
@@ -56,7 +79,8 @@ def validInstances = []
 
 // Variables used in 'ValidateSchedule' and 'ScheduleAMICreation' stages
 String executionDateTimeStr = ""
-int delaySeconds = 0
+int secondsFromNow = 0
+boolean isImminentExecution = false
 def queueFilePath = 'C:\\code\\AMICreationQueueService\\Test.json'
 
 def regionCodesGoss = [
@@ -120,46 +144,6 @@ pipeline {
     agent any
 
     stages {
-        stage('ValidateSchedule') {
-            when {
-                expression { params.Mode == 'Scheduled'}
-            }
-            steps {
-                script {
-
-                     // Specify the future date and time in military time (24-hour format)
-                    // e.g. "01/27/2024 14:25"
-                    executionDateTimeStr = params.Date + ' ' + params.Time
-
-                    Date executionDate = null
-
-                    try {
-                        // Parse the future date and time
-                        def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
-                        executionDate = dateFormat.parse(executionDateTimeStr)
-                    }
-                    catch (ex) {
-                        // Handle the error without failing the build
-                        error("Unable to parse DateTime ${executionDateTimeStr}.")
-                    }
-                    
-                    // Get the current date and time
-                    Date currentDate = new Date()
-
-                    // Calculate the difference in milliseconds
-                    long differenceInMillis = executionDate.time - currentDate.time
-
-                    // Convert the difference to seconds
-                    delaySeconds = differenceInMillis / 1000
-
-                    if (delaySeconds < 0) {
-                        error ("Scheduled date must be in a future date.")
-                    }
-
-                    echo "Scheduled date ${executionDateTimeStr} is valid."
-                }
-            }
-        }
         stage('GetEnvironmentDetails') {
             when {
                 expression { params.Mode != 'Express'}
@@ -196,7 +180,6 @@ pipeline {
                 script {
 
                     // removes whitespaces from instance names and splits them
-                    //def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split('\n')
                     def instanceNames = params.InstanceNames.split('\n')
                     def invalidInstanceNames = []
 
@@ -222,7 +205,6 @@ pipeline {
                             }
                         }
                     }
-
 
                     // Exit the pipeline if there are no valid instances
                     if (validInstances.isEmpty()) {
@@ -301,6 +283,52 @@ pipeline {
                 }
             }
         }
+        stage('ValidateSchedule') {
+            when {
+                expression { params.Mode == 'Scheduled'}
+            }
+            steps {
+                script {
+
+                     // Specify the future date and time in military time (24-hour format)
+                    // e.g. "01/27/2024 14:25"
+                    executionDateTimeStr = params.Date + ' ' + params.Time
+
+                    Date executionDate = null
+
+                    try {
+                        // Parse the future date and time
+                        def dateFormat = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm")
+                        executionDate = dateFormat.parse(executionDateTimeStr)
+                    }
+                    catch (ex) {
+                        // Handle the error without failing the build
+                        error("Unable to parse DateTime ${executionDateTimeStr}.")
+                    }
+                    
+                    // Get the current date and time
+                    Date currentDate = new Date()
+
+                    // Calculate the difference in milliseconds
+                    long differenceInMillis = executionDate.time - currentDate.time
+
+                    // Convert the difference to seconds
+                    secondsFromNow = differenceInMillis / 1000
+
+                    if (secondsFromNow < 0) {
+                        error ("Scheduled date must be in a future date.")
+                    }
+
+                    echo "Scheduled date ${executionDateTimeStr} is valid."
+
+                    if (secondsFromNow <= 900) {
+                        isImminentExecution = true
+                        echo "Requested date identified as imminent execution (within 15 minutes)."
+                    }
+
+                }
+            }
+        }
         stage('ScheduleAMICreation') {
             when {
                 expression { params.Mode == 'Scheduled'}
@@ -332,34 +360,40 @@ pipeline {
                             'ScheduledBuildId': scheduledBuildId
                         ]
 
-                        // Initialize an empty list for the objects
-                        def objectsList = []
-
-                        // Check if the file exists
-                        if (fileExistsAndNotEmpty(queueFilePath)) {
-                            // File exists and is not empty, read the existing content
-                            def existingContent = new File(queueFilePath).text
-                            def jsonSlurperClassic = new JsonSlurperClassic()
-
-                            // Try to parse the existing content, handle potential parsing errors
-                            try {
-                                objectsList = jsonSlurperClassic.parseText(existingContent)
-                            } catch (Exception e) {
-
-                                error ("Unable to parse json file. Please check for syntax errors.")
-                                
-                            }
+                        if (isImminentExecution) {
+                            queueAMICreation(scheduledBuildId, account, validInstancesNamesStr, validInstancesIDsStr, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
                         }
+                        else {
+                            // Initialize an empty list for the objects
+                            def objectsList = []
 
-                        // Add the new object to the list
-                        objectsList << newScheduledAMICreationObj
+                            // Check if the file exists
+                            if (fileExistsAndNotEmpty(queueFilePath)) {
+                                // File exists and is not empty, read the existing content
+                                def existingContent = new File(queueFilePath).text
+                                def jsonSlurperClassic = new JsonSlurperClassic()
 
-                        // Convert the list back to JSON string
-                        def newJsonStr = JsonOutput.toJson(objectsList)
-                        def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+                                // Try to parse the existing content, handle potential parsing errors
+                                try {
+                                    objectsList = jsonSlurperClassic.parseText(existingContent)
+                                } catch (Exception e) {
 
-                        // Write the JSON string back to the file
-                        writeFile(file: queueFilePath, text: prettyJsonStr)
+                                    error ("Unable to parse json file. Please check for syntax errors.")
+                                    
+                                }
+                            }
+
+                            // Add the new object to the list
+                            objectsList << newScheduledAMICreationObj
+
+                            // Convert the list back to JSON string
+                            def newJsonStr = JsonOutput.toJson(objectsList)
+                            def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                            // Write the JSON string back to the file
+                            writeFile(file: queueFilePath, text: prettyJsonStr)
+
+                        }
 
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
                         newScheduledAMICreationObjStr += "ScheduledBuildId: ${newScheduledAMICreationObj.ScheduledBuildId}\n"
