@@ -1,7 +1,9 @@
 import java.util.UUID
+import groovy.json.JsonSlurperClassic
+import groovy.json.JsonOutput
 
-class PrefixRegion {
-    String prefix
+class RegionCode {
+    String code
     String region
 }
 
@@ -11,17 +13,32 @@ class InstanceDetails {
     String region
 }
 
-// Function to find region by prefix
-def findRegionByPrefix(String instanceName, List<PrefixRegion> prefixRegions) {
-    for (pr in prefixRegions) {
-        if (instanceName.startsWith(pr.prefix)) {
-            return pr.region
+// Function to find region by prefix for GOSS
+def findRegionGOSS(String instanceName, List<RegionCode> regionCodes) {
+    if (instanceName.length() >= 8) { 
+        // Make sure instanceName has at least 8 characters
+        String substring = instanceName.substring(4, 8); // Extract the 5th to 8th characters
+        echo "${substring}" 
+        for (RegionCode regionCode : regionCodes) {
+            if (substring.equalsIgnoreCase(regionCode.code)) {
+                return regionCode.region;
+            }
+        }
+    }
+    return null; // Return null if no match is found or if instanceName is too short
+}
+
+// Function to find region by prefix for non-goss AWS accounts
+def findRegionNonGOSS(String instanceName, List<RegionCode> regionCodes) {
+    for (regionCode in regionCodes) {
+        if (instanceName.toUpperCase().startsWith(regionCode.code)) {
+            return regionCode.region
         }
     }
     return null // Return null if no match is found
 }
 
-def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, scheduledBuildId, executionDateTime, delaySeconds) {
+def queueAMICreation(scheduledBuildId, account, instanceNames, instanceIDs, region, ticketNumber, mode,  date, time, secondsFromNow) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
@@ -30,56 +47,81 @@ def setDelayedBuild(environment, region, instanceNames, ticketNumber, mode, sche
     }
 
     def params = [
-        new StringParameterValue('Environment', environment),
-        new StringParameterValue('Region', region),
+        new StringParameterValue('Account', account),
         new StringParameterValue('InstanceNames', instanceNames),
+        new StringParameterValue('InstanceIDs', instanceIDs),
+        new StringParameterValue('Region', region),
         new StringParameterValue('TicketNumber', ticketNumber),
         new StringParameterValue('Mode', mode),
-        new StringParameterValue('ExecutionDateTime', executionDateTime),
+        new StringParameterValue('Date', date),
+        new StringParameterValue('Time', time),
         new StringParameterValue('ScheduledBuildId', scheduledBuildId)
     ]
 
-    def future = job.scheduleBuild2(delaySeconds, new ParametersAction(params))
+    def future = job.scheduleBuild2(secondsFromNow, new ParametersAction(params))
+}
+
+// Function to check if the file exists and is not empty
+def boolean fileExistsAndNotEmpty(String filePath) {
+    new File(filePath).with { file ->
+        file.exists() && file.length() > 0
+    }
 }
 
 // Variables used in 'GetEnvironmentDetails' stage
 def environment = ""
 def account = ""
-def role = ""
+def role = 'AMICreationRole'
+def scheduledBuildId = ""
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
 
 // Variables used in 'ValidateSchedule' and 'ScheduleAMICreation' stages
 String executionDateTimeStr = ""
-int delaySeconds = 0
+int secondsFromNow = 0
+boolean isImminentExecution = false
+def queueFilePath = 'C:\\code\\AMICreationQueueService\\Test.json'
 
-// Example array of PrefixRegion objects
-def prefixRegions = [
-    new PrefixRegion(prefix: "USEA", region: "us-east-1"),
-    new PrefixRegion(prefix: "USWE", region: "us-west-1"),
-    new PrefixRegion(prefix: "EUCE", region: "eu-central-1"),
-    new PrefixRegion(prefix: "EUWE", region: "eu-west-1"),
-    new PrefixRegion(prefix: "APAU", region: "ap-southeast-2"),
-    new PrefixRegion(prefix: "APSP", region: "ap-southeast-1"),
-    new PrefixRegion(prefix: "UOUE", region: "us-east-1"),
-    new PrefixRegion(prefix: "UOUW", region: "us-west-1"),
-    new PrefixRegion(prefix: "CACE", region: "ca-central-1")
+def regionCodesGoss = [
+    new RegionCode(code: "ASE1", region: "ap-southeast-1"),
+    new RegionCode(code: "ASE2", region: "ap-southeast-2"),
+    new RegionCode(code: "CAC1", region: "ca-central-1"),
+    new RegionCode(code: "EUC1", region: "eu-central-1"),
+    new RegionCode(code: "EUW1", region: "eu-west-1"),
+    new RegionCode(code: "USE1", region: "us-east-1"),
+    new RegionCode(code: "USW2", region: "us-west-2")
+]
+
+def regionCodesNonGoss = [
+    new RegionCode(code: "USEA", region: "us-east-1"),
+    new RegionCode(code: "USWE", region: "us-west-1"),
+    new RegionCode(code: "EUCE", region: "eu-central-1"),
+    new RegionCode(code: "EUWE", region: "eu-west-1"),
+    new RegionCode(code: "APAU", region: "ap-southeast-2"),
+    new RegionCode(code: "APSP", region: "ap-southeast-1"),
+    new RegionCode(code: "UOUE", region: "us-east-1"),
+    new RegionCode(code: "UOUW", region: "us-west-1"),
+    new RegionCode(code: "CACE", region: "ca-central-1")
 ]
 
 pipeline {
     parameters {
         choice(
             name: 'Environment',
-            choices: ['rod_aws','rod_aws_2'],
+            choices: ['rod_aws','rod_aws_2','Global-OSS'],
         )
         choice( 
             name: 'Region',
             choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
         )
+        text(
+            name: 'InstanceNames', 
+            defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
+        )
         string(
-            name: 'InstanceNames',
-            defaultValue: 'APSPTEST1,APSPTEST2,APSPTEST3,APAUTEST3,TEST', 
+            name: 'InstanceIDs',
+            defaultValue: 'i-123,i-456,i-789', 
         )
         string(
             name: 'TicketNumber',
@@ -87,28 +129,29 @@ pipeline {
         )
         choice( 
             name: 'Mode',
-            choices: ['Adhoc','Scheduled'],
+            choices: ['On-Demand','Scheduled','Express'],
         )
         string(
             name: 'Date',
-            defaultValue: 'MM/DD/YYYY',
+            //defaultValue: 'MM/DD/YYYY',
+            defaultValue: '02/02/2024',
         )
         string(
             name: 'Time',
-            defaultValue: 'HH:MM',
+            defaultValue: '14:00',
         )
     }
     agent any
 
     stages {
         stage('GetEnvironmentDetails') {
+            when {
+                expression { params.Mode != 'Express'}
+            }
             steps {
                 script {
                     environment = params.Environment
-                    
-                    region = params.Region
-                    role = 'AMICreationRole'
-                    
+
                     switch (environment) {
                         case 'rod_aws':
                             account = '554249804926'
@@ -116,31 +159,50 @@ pipeline {
                         case 'rod_aws_2':
                             account = '992382788789'
                             break
+                        case 'Global-OSS':
+                            account = '554249804926'
+                            break
                         default:
-                            error("No matching environment details found that matches \"${environment}\". Exiting pipeline.")
+                            error("No matching environment details found that matches \"${environment}\".")
                     }
 
-                    echo "Successfully retrieved environment details for environment \"${environment}\""                   
+                    echo "Successfully retrieved environment details for environment \"${environment}\"."                   
 
                 }
             }
 
         }
         stage('ValidateEC2') {
+            when {
+                expression { params.Mode != 'Express'}
+            }
             steps {
                 script {
 
                     // removes whitespaces from instance names and splits them
-                    def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
+                    def instanceNames = params.InstanceNames.split('\n')
                     def invalidInstanceNames = []
 
-                    // Populate valid and invalid instances arrays
-                    instanceNames.each { instanceName ->
-                        def region = findRegionByPrefix(instanceName, prefixRegions)
-                        if (region) {
-                            validInstances << new InstanceDetails(instanceName: instanceName, region: region)
-                        } else {
-                            invalidInstanceNames << instanceName
+                    if (environment == "Global-OSS") {
+                        // Populate valid and invalid instances arrays
+                        instanceNames.each { instanceName ->
+                            def region = findRegionGOSS(instanceName, regionCodesGoss)
+                            if (region) {
+                                validInstances << new InstanceDetails(instanceName: instanceName, region: region)
+                            } else {
+                                invalidInstanceNames << instanceName
+                            }
+                        }
+                    }
+                    else if (environment != "Global-OSS") {
+                        // Populate valid and invalid instances arrays
+                        instanceNames.each { instanceName ->
+                            def region = findRegionNonGOSS(instanceName, regionCodesNonGoss)
+                            if (region) {
+                                validInstances << new InstanceDetails(instanceName: instanceName, region: region)
+                            } else {
+                                invalidInstanceNames << instanceName
+                            }
                         }
                     }
 
@@ -213,19 +275,11 @@ pipeline {
                     // Filter validInstances to get only objects with an instanceId
                     validInstances = validInstances.findAll { it.instanceId }
 
-                    // Displays a summary of valid EC2 instances
-                    if (!validInstances.isEmpty()) {
-                        def verifiedInstancesStr = "Final list of instances:\n"
-                        verifiedInstancesStr += "-----------------------\n"
-                        validInstances.each { instance ->
-                            verifiedInstancesStr += "Instance Name: ${instance.instanceName}\n"
-                            verifiedInstancesStr += "Instance ID: ${instance.instanceId}\n"
-                            verifiedInstancesStr += "Region: ${instance.region}\n"
-                            verifiedInstancesStr += "-----------------------\n"
-                        }
+                    // Exit the pipeline if there are no valid instances
+                    if (validInstances.isEmpty()) {
+                        error("None of the instances entered exists. Please verify that the correct account alias and EC2 instance names have been entered. Exiting the pipeline.")
+                    }
 
-                        echo "${verifiedInstancesStr}"
-                    }                    
                 }
             }
         }
@@ -237,7 +291,7 @@ pipeline {
                 script {
 
                      // Specify the future date and time in military time (24-hour format)
-                    // String futureDateTime = "01/27/2024 14:25"
+                    // e.g. "01/27/2024 14:25"
                     executionDateTimeStr = params.Date + ' ' + params.Time
 
                     Date executionDate = null
@@ -259,13 +313,19 @@ pipeline {
                     long differenceInMillis = executionDate.time - currentDate.time
 
                     // Convert the difference to seconds
-                    delaySeconds = differenceInMillis / 1000
+                    secondsFromNow = differenceInMillis / 1000
 
-                    if (delaySeconds < 0) {
+                    if (secondsFromNow < 0) {
                         error ("Scheduled date must be in a future date.")
                     }
 
                     echo "Scheduled date ${executionDateTimeStr} is valid."
+
+                    if (secondsFromNow <= 900) {
+                        isImminentExecution = true
+                        echo "Requested date identified as imminent execution (within 15 minutes)."
+                    }
+
                 }
             }
         }
@@ -275,26 +335,123 @@ pipeline {
             }
             steps {
                 script {
-                    echo "Will create scheduled Jenkins build."
 
-                    // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
-                    def scheduledBuildId = UUID.randomUUID()
-                    scheduledBuildId = scheduledBuildId.toString()
+                    // Group instances by region
+                    def instancesByRegion = validInstances.groupBy { it.region }
 
-                    def validInstancesNameStr = validInstances.collect { it.instanceName }.join(',')
+                    // Iterate over each region and verify instances
+                    instancesByRegion.each { region, instances ->
+                        def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
+                        def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
+
+                        // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
+                        scheduledBuildId = UUID.randomUUID()
+                        scheduledBuildId = scheduledBuildId.toString()
+
+                        def newScheduledAMICreationObj = [
+                            'Account': account,
+                            'Region': region,
+                            'InstanceNames': validInstancesNamesStr,
+                            'InstanceIDs': validInstancesIDsStr,
+                            'TicketNumber': params.TicketNumber,
+                            'Date': params.Date,
+                            'Time': params.Time,
+                            'Mode': 'Express',
+                            'ScheduledBuildId': scheduledBuildId
+                        ]
+
+                        if (isImminentExecution) {
+                            queueAMICreation(scheduledBuildId, account, validInstancesNamesStr, validInstancesIDsStr, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
+                        }
+                        else {
+                            // Initialize an empty list for the objects
+                            def objectsList = []
+
+                            // Check if the file exists
+                            if (fileExistsAndNotEmpty(queueFilePath)) {
+                                // File exists and is not empty, read the existing content
+                                def existingContent = new File(queueFilePath).text
+                                def jsonSlurperClassic = new JsonSlurperClassic()
+
+                                // Try to parse the existing content, handle potential parsing errors
+                                try {
+                                    objectsList = jsonSlurperClassic.parseText(existingContent)
+                                } catch (Exception e) {
+
+                                    error ("Unable to parse json file. Please check for syntax errors.")
+                                    
+                                }
+                            }
+
+                            // Add the new object to the list
+                            objectsList << newScheduledAMICreationObj
+
+                            // Convert the list back to JSON string
+                            def newJsonStr = JsonOutput.toJson(objectsList)
+                            def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                            // Write the JSON string back to the file
+                            writeFile(file: queueFilePath, text: prettyJsonStr)
+
+                        }
+
+                        def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
+                        newScheduledAMICreationObjStr += "ScheduledBuildId: ${newScheduledAMICreationObj.ScheduledBuildId}\n"
+                        newScheduledAMICreationObjStr += "Account: ${newScheduledAMICreationObj.Account}\n"
+                        newScheduledAMICreationObjStr += "Region: ${newScheduledAMICreationObj.Region}\n"
+                        newScheduledAMICreationObjStr += "InstanceNames: ${newScheduledAMICreationObj.InstanceNames}\n"
+                        newScheduledAMICreationObjStr += "InstanceIDs: ${newScheduledAMICreationObj.InstanceIDs}\n"
+                        newScheduledAMICreationObjStr += "TicketNumber: ${newScheduledAMICreationObj.TicketNumber}\n"
+                        newScheduledAMICreationObjStr += "Date: ${newScheduledAMICreationObj.Date}\n"
+                        newScheduledAMICreationObjStr += "Time: ${newScheduledAMICreationObj.Time}\n"
                     
-                    // Example usage
-                    setDelayedBuild(environment, region, validInstancesNameStr, params.TicketNumber, 'Adhoc', scheduledBuildId, executionDateTimeStr, delaySeconds)
-                    
+                        echo "${newScheduledAMICreationObjStr}"
+
+                    }
+  
                 }
             }
         }
         stage('CreateAMI') {
             when {
-                expression { params.Mode == 'Adhoc'}
+                expression { params.Mode == 'On-Demand' || params.Mode == 'Express' }
             }
             steps {
                 script {
+
+                    // Generates validInstances array directly from parameters
+                    if (params.Mode == 'Express') {
+                        def instanceNames = params.InstanceNames.replaceAll("\\s+", "").split(',')
+                        def instanceIDs =  params.InstanceIDs.replaceAll("\\s+", "").split(',')
+
+                        if (instanceNames.length != instanceIDs.length) {
+                            error ("The count of Instances names and IDs does not match.")
+                        }
+                        
+                        for (int i = 0; i < instanceNames.length; i++) {
+                            
+                            validInstances << new InstanceDetails(instanceName: instanceNames[i], instanceId: instanceIDs[i], region: params.Region)
+                        }
+
+                        // Gets AWS account number from paramters
+                        account = params.Account
+                        scheduledBuildId = params.ScheduledBuildId
+
+                    }
+
+                    // Displays a summary of valid EC2 instances
+                    if (!validInstances.isEmpty()) {
+                        def validInstancesStr = "Final list of instances:\n"
+                        validInstancesStr += "-----------------------\n"
+                        validInstances.each { instance ->
+                            validInstancesStr += "Instance Name: ${instance.instanceName}\n"
+                            validInstancesStr += "Instance ID: ${instance.instanceId}\n"
+                            validInstancesStr += "Region: ${instance.region}\n"
+                            validInstancesStr += "-----------------------\n"
+                        }
+
+                        echo "${validInstancesStr}"
+                    }                    
 
                     // Group instances by region
                     def instancesByRegion = validInstances.groupBy { it.region }
@@ -359,9 +516,48 @@ pipeline {
                             }
                         }
                     }
-
                 }
             }
+        }
+        stage('CleanUp') {
+            when {
+                expression { params.Mode == 'Express'}
+            }
+
+            steps {
+                script {
+                    // Initialize an empty list for the objects
+                    def objectsList = []
+
+                    // Check if the file exists
+                    if (fileExistsAndNotEmpty(queueFilePath)) {
+                        // File exists and is not empty, read the existing content
+                        def existingContent = new File(queueFilePath).text
+                        def jsonSlurperClassic = new JsonSlurperClassic()
+
+                        // Try to parse the existing content, handle potential parsing errors
+                        try {
+                            objectsList = jsonSlurperClassic.parseText(existingContent)
+                        } catch (Exception e) {
+
+                            error ("Unable to parse json file. Please check for syntax errors.")
+                        }
+                    }
+
+                    // Filter the array to remove the object with the specified ID
+                    objectsList = objectsList.findAll { it.ScheduledBuildId != scheduledBuildId }
+
+                    // Convert the list back to JSON string
+                    def newJsonStr = JsonOutput.toJson(objectsList)
+                    def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                    // Write the JSON string back to the file
+                    writeFile(file: queueFilePath, text: prettyJsonStr)
+
+                    echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${scheduledBuildId}."
+                }
+            }
+            
         }
     }
 }
