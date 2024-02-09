@@ -130,16 +130,16 @@ pipeline {
             name: 'Mode',
             choices: ['On-Demand','Scheduled'] //,'Express'],
         )
-        string(
-            name: 'Date',
-            defaultValue: 'MM/DD/YYYY'
-            // defaultValue: '02/02/2024',
-        )
-        string(
-            name: 'Time',
-            defaultValue: 'HH:MM',
-            description: 'Time in military format e.g. 14:00, 23:00'
-        )
+        // string(
+        //     name: 'Date',
+        //     defaultValue: 'MM/DD/YYYY'
+        //     // defaultValue: '02/02/2024',
+        // )
+        // string(
+        //     name: 'Time',
+        //     defaultValue: 'HH:MM',
+        //     description: 'Time in military format e.g. 14:00, 23:00'
+        // )
     }
     agent any
 
