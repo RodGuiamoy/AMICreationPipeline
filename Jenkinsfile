@@ -138,7 +138,7 @@ pipeline {
         )
         string(
             name: 'Time',
-            defaultValue: '14:00',
+            defaultValue: 'HH:MM',
             description: 'Time in military format e.g. 14:00, 23:00'
         )
     }
