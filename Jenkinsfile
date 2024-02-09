@@ -292,7 +292,7 @@ pipeline {
 
                      // Specify the future date and time in military time (24-hour format)
                     // e.g. "01/27/2024 14:25"
-                    executionDateTimeStr = params.Date + ' ' + params.Time
+                    executionDateTimeStr = params.Date.split(',').first() + ' ' + params.Time.split(',').first()
 
                     Date executionDate = null
 
