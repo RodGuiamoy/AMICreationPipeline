@@ -66,9 +66,7 @@ else {
 import java.util.UUID
 import groovy.json.JsonSlurperClassic
 import groovy.json.JsonOutput
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
+
 
 class RegionCode {
     String code
@@ -516,6 +514,10 @@ pipeline {
                                     // // Get UTC date
                                     // def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
                                     // utcDate = utcDate.readLines().drop(1).join("\n")
+
+                                    import java.time.LocalDateTime
+                                    import java.time.ZoneOffset
+                                    import java.time.format.DateTimeFormatter
 
                                     // Get the current UTC date and time
                                     LocalDateTime utcDateTime = LocalDateTime.now(ZoneOffset.UTC);
