@@ -511,27 +511,27 @@ pipeline {
                                     def uuidString = uuid.toString()
                                     def tag = uuidString[0..2]
                                     
-                                    // // Get UTC date
-                                    // def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
-                                    // utcDate = utcDate.readLines().drop(1).join("\n")
+                                    // // // Get UTC date
+                                    // // def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
+                                    // // utcDate = utcDate.readLines().drop(1).join("\n")
 
-                                    import java.time.LocalDateTime
-                                    import java.time.ZoneOffset
-                                    import java.time.format.DateTimeFormatter
+                                    // // Get the current UTC date and time
+                                    // LocalDateTime utcDateTime = LocalDateTime.now(ZoneOffset.UTC);
 
-                                    // Get the current UTC date and time
-                                    LocalDateTime utcDateTime = LocalDateTime.now(ZoneOffset.UTC);
+                                    // // Define the desired format
+                                    // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMddyy_HHmm");
 
-                                    // Define the desired format
-                                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMddyy_HHmm");
-
-                                    // Format the UTC date and time
-                                    String utcDateTimeFormatted = utcDateTime.format(formatter);
+                                    // // Format the UTC date and time
+                                    // String utcDateTimeFormatted = utcDateTime.format(formatter);
 
                                     // Print the formatted UTC date and time
                                     //System.out.println("Formatted UTC Date and Time: " + formattedDateTime);
 
-                                    def amiName = "${ticketNumber}_${instanceName}_${utcDateTimeFormatted}_${tag}"
+                                    Date currentDate = new Date()
+                                    def dateFormat = new java.text.SimpleDateFormat("MMddyyyy_HHmm")
+                                    def currentDateStr = dateFormat.format(currentDate)
+
+                                    def amiName = "${ticketNumber}_${instanceName}_${currentDateStr}_${tag}"
 
                                      // echo "Creating AMI ${amiName} for ${instanceId}."
 
