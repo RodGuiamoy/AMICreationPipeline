@@ -561,7 +561,7 @@ pipeline {
 
                                         def amiDetails = new AMIDetails(instance, amiName, cliOutputJson.ImageId)
 
-                                        echo "${amiDetails}"
+                                        echo "${amiDetails.toString()}"
 
                                         // validInstances << new AMIDetails(instance, amiName, cliOutputJson.ImageId)
                                         
