@@ -576,16 +576,24 @@ pipeline {
                     }
 
                     // Filter the array to remove the object with the specified ID
-                    objectsList = objectsList.findAll { it.ScheduledBuildId != scheduledBuildId }
+                    currentScheduledBuild = objectsList.findAll { it.ScheduledBuildId == scheduledBuildId }
 
-                    // Convert the list back to JSON string
-                    def newJsonStr = JsonOutput.toJson(objectsList)
-                    def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+                    if (!currentScheduledBuild) {
+                        echo "Unable to find scheduled build in queue file."
+                    }
+                    else {
+                        // Filter the array to remove the object with the specified ID
+                        objectsList = objectsList.findAll { it.ScheduledBuildId != scheduledBuildId }
 
-                    // Write the JSON string back to the file
-                    writeFile(file: queueFilePath, text: prettyJsonStr)
+                        // Convert the list back to JSON string
+                        def newJsonStr = JsonOutput.toJson(objectsList)
+                        def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
 
-                    echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${scheduledBuildId}."
+                        // Write the JSON string back to the file
+                        writeFile(file: queueFilePath, text: prettyJsonStr)
+
+                        echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${scheduledBuildId}."
+                    }                   
                 }
             }
             
