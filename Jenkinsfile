@@ -540,7 +540,7 @@ pipeline {
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
-                                        unstable('Error in creating AMI. Moving on to next EC2 instance.')
+                                        unstable("Error in creating AMI for ${instanceId}. Moving on to next EC2 instance.")
                                     }
                                 }
                             }
