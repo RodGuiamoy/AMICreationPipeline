@@ -1,3 +1,82 @@
+properties([
+    parameters([
+        choice(
+            name: 'Environment',
+            choices: ['rod_aws','rod_aws_2','Global-OSS'],
+        ),
+        text(
+            name: 'InstanceNames', 
+            defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
+        ),
+        string(
+            name: 'TicketNumber',
+            defaultValue: 'SCTASK00000000',
+        ),
+        choice( 
+            name: 'Mode',
+            choices: ['On-Demand','Scheduled'] //,'Express'],
+        ),
+        // [$class: 'ChoiceParameter', 
+        //     choiceType: 'PT_SINGLE_SELECT', 
+        //     description: 'Select the Env Name from the Dropdown List', 
+        //     name: 'Mode', 
+        //     script: [
+        //         $class: 'GroovyScript', 
+        //         script: [
+        //             classpath: [], 
+        //             sandbox: true, 
+        //             script: 
+        //                 'return["On-demand","Scheduled"]'
+        //         ]
+        //     ]
+        // ], 
+        [$class: 'DynamicReferenceParameter',
+            choiceType: 'ET_FORMATTED_HTML',
+            omitValueField: true,
+            name: 'Date',
+            referencedParameters: 'Mode',
+            script: [
+                $class: 'GroovyScript',
+                script: [
+                    classpath: [],
+                    sandbox: false,
+                    script:
+                    """
+if (Mode.equals("Scheduled")) {
+    return "<input type='text' name='value' value='Enter date in MM/DD/YYYY format' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
+}
+else {
+    return "<input type='text' name='value' value='N/A' disabled class=\\"jenkins-input\\" style='color: grey;'/>"
+}
+                    """
+                ]
+            ]
+        ],
+        [$class: 'DynamicReferenceParameter',
+            choiceType: 'ET_FORMATTED_HTML',
+            omitValueField: true,
+            name: 'Time',
+            referencedParameters: 'Mode',
+            script: [
+                $class: 'GroovyScript',
+                script: [
+                    classpath: [],
+                    sandbox: false,
+                    script:
+                    """
+if (Mode.equals("Scheduled")) {
+    return "<input type='text' name='value' value='Enter time in military time format. e.g. 23:00' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
+}
+else {
+    return "<input type='text' name='value' value='N/A' disabled class=\\"jenkins-input\\" style='color: grey;'/>"
+}
+                    """
+                ]
+            ]
+        ],
+    ])
+])
+
 import java.util.UUID
 import groovy.json.JsonSlurperClassic
 import groovy.json.JsonOutput
@@ -18,7 +97,6 @@ def findRegionGOSS(String instanceName, List<RegionCode> regionCodes) {
     if (instanceName.length() >= 8) { 
         // Make sure instanceName has at least 8 characters
         String substring = instanceName.substring(4, 8); // Extract the 5th to 8th characters
-        echo "${substring}" 
         for (RegionCode regionCode : regionCodes) {
             if (substring.equalsIgnoreCase(regionCode.code)) {
                 return regionCode.region;
@@ -106,41 +184,43 @@ def regionCodesNonGoss = [
 ]
 
 pipeline {
-    parameters {
-        choice(
-            name: 'Environment',
-            choices: ['rod_aws','rod_aws_2','Global-OSS'],
-        )
-        choice( 
-            name: 'Region',
-            choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
-        )
-        text(
-            name: 'InstanceNames', 
-            defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
-        )
-        string(
-            name: 'InstanceIDs',
-            defaultValue: 'i-123,i-456,i-789', 
-        )
-        string(
-            name: 'TicketNumber',
-            defaultValue: 'SCTASK00000000',
-        )
-        choice( 
-            name: 'Mode',
-            choices: ['On-Demand','Scheduled','Express'],
-        )
-        string(
-            name: 'Date',
-            //defaultValue: 'MM/DD/YYYY',
-            defaultValue: '02/02/2024',
-        )
-        string(
-            name: 'Time',
-            defaultValue: '14:00',
-        )
-    }
+    // parameters {
+    //     choice(
+    //         name: 'Environment',
+    //         choices: ['rod_aws','rod_aws_2','Global-OSS'],
+    //     )
+    //     // choice( 
+    //     //     name: 'Region',
+    //     //     choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
+    //     // )
+    //     text(
+    //         name: 'InstanceNames', 
+    //         defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
+    //     )
+    //     // string(
+    //     //     name: 'InstanceIDs',
+    //     //     defaultValue: 'i-123,i-456,i-789', 
+    //     // )
+    //     string(
+    //         name: 'TicketNumber',
+    //         defaultValue: 'SCTASK00000000',
+    //     )
+    //     choice( 
+    //         name: 'Mode',
+    //         choices: ['On-Demand','Scheduled'] //,'Express'],
+    //     )
+    //     // string(
+    //     //     name: 'Date',
+    //     //     defaultValue: 'MM/DD/YYYY'
+    //     //     // defaultValue: '02/02/2024',
+    //     // )
+    //     // string(
+    //     //     name: 'Time',
+    //     //     defaultValue: 'HH:MM',
+    //     //     description: 'Time in military format e.g. 14:00, 23:00'
+    //     // )
+    // }
+
     agent any
 
     stages {
@@ -292,7 +372,7 @@ pipeline {
 
                      // Specify the future date and time in military time (24-hour format)
                     // e.g. "01/27/2024 14:25"
-                    executionDateTimeStr = params.Date + ' ' + params.Time
+                    executionDateTimeStr = params.Date.split(',').first() + ' ' + params.Time.split(',').first()
 
                     Date executionDate = null
 
