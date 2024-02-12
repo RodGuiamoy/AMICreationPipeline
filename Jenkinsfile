@@ -66,6 +66,8 @@ else {
 import java.util.UUID
 import groovy.json.JsonSlurperClassic
 import groovy.json.JsonOutput
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class RegionCode {
     String code
@@ -510,11 +512,23 @@ pipeline {
                                     def uuidString = uuid.toString()
                                     def tag = uuidString[0..2]
                                     
-                                    // Get UTC date
-                                    def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
-                                    utcDate = utcDate.readLines().drop(1).join("\n")
+                                    // // Get UTC date
+                                    // def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
+                                    // utcDate = utcDate.readLines().drop(1).join("\n")
 
-                                    def amiName = "${ticketNumber}_${instanceName}_${utcDate}_${tag}"
+                                    // Get the current UTC date and time
+                                    LocalDateTime utcDateTime = LocalDateTime.now(ZoneOffset.UTC);
+
+                                    // Define the desired format
+                                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMddyy_HHmm");
+
+                                    // Format the UTC date and time
+                                    String utcDateTime = utcDateTime.format(formatter);
+
+                                    // Print the formatted UTC date and time
+                                    //System.out.println("Formatted UTC Date and Time: " + formattedDateTime);
+
+                                    def amiName = "${ticketNumber}_${instanceName}_${utcDateTime}_${tag}"
 
                                      // echo "Creating AMI ${amiName} for ${instanceId}."
 
