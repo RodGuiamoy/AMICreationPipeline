@@ -79,6 +79,25 @@ class InstanceDetails {
     String region
 }
 
+class AMIDetails {
+    InstanceDetails instanceDetails  // Embedding InstanceDetails class
+    String amiName
+    String amiId
+
+    // Constructor to initialize all fields
+    AMIDetails(InstanceDetails instanceDetails, String amiName, String amiId) {
+        this.instanceDetails = instanceDetails
+        this.amiName = amiName
+        this.amiId = amiId
+    }
+
+    // Optional: toString method for easy printing
+    @Override
+    String toString() {
+        return "AMI Details: [AMI Name: ${amiName}, AMI ID: ${amiId}, Instance Details: [Instance Name: ${instanceDetails.instanceName}, Instance ID: ${instanceDetails.instanceId}, Region: ${instanceDetails.region}]]"
+    }
+}
+
 // Function to find region by prefix for GOSS
 def findRegionGOSS(String instanceName, List<RegionCode> regionCodes) {
     if (instanceName.length() >= 8) { 
@@ -141,6 +160,7 @@ def scheduledBuildId = ""
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
+def createdAMIs = []
 
 // Variables used in 'ValidateSchedule' and 'ScheduleAMICreation' stages
 String executionDateTimeStr = ""
@@ -538,6 +558,12 @@ pipeline {
                                         }
 
                                         echo "Successfully created AMI ${cliOutputJson.ImageId} - ${amiName} for ${instanceId} - ${instanceName}."
+
+                                        def amiDetails = new AMIDetails(instance, amiName, cliOutputJson.ImageId)
+
+                                        echo "${amiDetails}"
+
+                                        // validInstances << new AMIDetails(instance, amiName, cliOutputJson.ImageId)
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
@@ -550,6 +576,87 @@ pipeline {
                 }
             }
         }
+//         stage('Send Email') {
+//             steps {
+//                 script {
+//                     if (params.Mode == 'Scheduled') {
+
+//                     }
+//                     else {
+//                         def body = """
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8">
+// <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// <title>Deltek Styled HTML Table</title>
+// <style>
+//     body {
+//         font-family: Arial, sans-serif;
+//         margin: 0;
+//         padding: 0 20px;
+//         box-sizing: border-box;
+//     }
+//     table {
+//         width: 100%;
+//         border-collapse: collapse;
+//         margin: 25px 0;
+//         font-size: 0.9em;
+//         min-width: 400px;
+//         border-radius: 5px 5px 0 0;
+//         overflow: hidden;
+//         box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+//     }
+//     thead tr {
+//         background-color: #005B9A; /* Deltek's blue */
+//         color: #ffffff;
+//         text-align: left;
+//     }
+//     th, td {
+//         padding: 12px 15px;
+//     }
+//     tbody tr {
+//         border-bottom: 1px solid #dddddd;
+//     }
+
+//     tbody tr:nth-of-type(even) {
+//         background-color: #f0f0f0; /* Light gray for better readability */
+//     }
+
+//     tbody tr:last-of-type {
+//         border-bottom: 2px solid #005B9A;
+//     }
+
+//     tbody tr.active-row {
+//         font-weight: bold;
+//         color: #005B9A;
+//     }
+//     .status-message {
+//         margin-top: 20px;
+//         font-size: 0.9em;
+//         color: #333; /* Dark gray for the message */
+//     }
+// </style>
+// </head>
+// <body>
+
+// <table>
+//     <thead>
+//         <tr>
+//             <th>InstanceID</th>
+//             <th>InstanceName</th>
+//             <th>Region</th>
+//             <th>AMI ID</th>
+//             <th>AMI Name</th>
+//             <th>AMI Status</th>
+//         </tr>
+//     </thead>
+//     <tbody>
+// """
+//                     }
+//                 }
+//             }
+//         }
         stage('CleanUp') {
             when {
                 expression { params.Mode == 'Express'}
