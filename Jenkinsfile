@@ -16,20 +16,6 @@ properties([
             name: 'Mode',
             choices: ['On-Demand','Scheduled'] //,'Express'],
         ),
-        // [$class: 'ChoiceParameter', 
-        //     choiceType: 'PT_SINGLE_SELECT', 
-        //     description: 'Select the Env Name from the Dropdown List', 
-        //     name: 'Mode', 
-        //     script: [
-        //         $class: 'GroovyScript', 
-        //         script: [
-        //             classpath: [], 
-        //             sandbox: true, 
-        //             script: 
-        //                 'return["On-demand","Scheduled"]'
-        //         ]
-        //     ]
-        // ], 
         [$class: 'DynamicReferenceParameter',
             choiceType: 'ET_FORMATTED_HTML',
             omitValueField: true,
@@ -184,42 +170,6 @@ def regionCodesNonGoss = [
 ]
 
 pipeline {
-    // parameters {
-    //     choice(
-    //         name: 'Environment',
-    //         choices: ['rod_aws','rod_aws_2','Global-OSS'],
-    //     )
-    //     // choice( 
-    //     //     name: 'Region',
-    //     //     choices: ['us-east-1','us-west-2','ap-southeast-1','ap-southeast-2','ca-central-1','eu-central-1','eu-west-1'],
-    //     // )
-    //     text(
-    //         name: 'InstanceNames', 
-    //         defaultValue: 'APSPTEST1\nAPSPTEST2\nAPSPTEST3',
-    //     )
-    //     // string(
-    //     //     name: 'InstanceIDs',
-    //     //     defaultValue: 'i-123,i-456,i-789', 
-    //     // )
-    //     string(
-    //         name: 'TicketNumber',
-    //         defaultValue: 'SCTASK00000000',
-    //     )
-    //     choice( 
-    //         name: 'Mode',
-    //         choices: ['On-Demand','Scheduled'] //,'Express'],
-    //     )
-    //     // string(
-    //     //     name: 'Date',
-    //     //     defaultValue: 'MM/DD/YYYY'
-    //     //     // defaultValue: '02/02/2024',
-    //     // )
-    //     // string(
-    //     //     name: 'Time',
-    //     //     defaultValue: 'HH:MM',
-    //     //     description: 'Time in military format e.g. 14:00, 23:00'
-    //     // )
-    // }
 
     agent any
 
