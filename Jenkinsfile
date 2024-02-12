@@ -516,7 +516,7 @@ pipeline {
 
                                     def amiName = "${ticketNumber}_${instanceName}_${utcDate}_${tag}"
 
-                                    echo "Creating AMI ${amiName} for ${instanceId}."
+                                     // echo "Creating AMI ${amiName} for ${instanceId}."
 
                                     def awsCliCommand = "aws ec2 create-image --instance-id ${instanceId} --name ${amiName} --region ${region} --no-reboot --output json"
 
@@ -536,7 +536,7 @@ pipeline {
                                             return
                                         }
 
-                                        echo "Successfully created AMI ${cliOutputJson.ImageId}."
+                                        echo "Successfully created AMI ${cliOutputJson.ImageId} - ${amiName} for ${instanceId}."
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
