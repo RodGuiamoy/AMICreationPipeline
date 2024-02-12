@@ -579,7 +579,7 @@ pipeline {
                     currentScheduledBuild = objectsList.findAll { it.ScheduledBuildId == scheduledBuildId }
 
                     if (!currentScheduledBuild) {
-                        echo "Unable to find scheduled build in queue file."
+                        echo "Scheduled AMI creation request not found queue file. The request must either be imminent (within 15 mins) or it has been manually deleted."
                     }
                     else {
                         // Filter the array to remove the object with the specified ID
