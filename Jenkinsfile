@@ -514,7 +514,7 @@ pipeline {
                                     def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
                                     utcDate = utcDate.readLines().drop(1).join("\n")
 
-                                    def amiName = "${ticketNumber}_${instanceName}_ADHOC_${utcDate}_${tag}"
+                                    def amiName = "${ticketNumber}_${instanceName}_${utcDate}_${tag}"
 
                                     echo "Creating AMI ${amiName} for ${instanceId}."
 
