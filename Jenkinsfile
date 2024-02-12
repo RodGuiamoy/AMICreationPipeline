@@ -68,6 +68,7 @@ import groovy.json.JsonSlurperClassic
 import groovy.json.JsonOutput
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 class RegionCode {
     String code
@@ -523,12 +524,12 @@ pipeline {
                                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMddyy_HHmm");
 
                                     // Format the UTC date and time
-                                    String utcDateTime = utcDateTime.format(formatter);
+                                    String utcDateTimeFormatted = utcDateTime.format(formatter);
 
                                     // Print the formatted UTC date and time
                                     //System.out.println("Formatted UTC Date and Time: " + formattedDateTime);
 
-                                    def amiName = "${ticketNumber}_${instanceName}_${utcDateTime}_${tag}"
+                                    def amiName = "${ticketNumber}_${instanceName}_${utcDateTimeFormatted}_${tag}"
 
                                      // echo "Creating AMI ${amiName} for ${instanceId}."
 
