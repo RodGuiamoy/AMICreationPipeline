@@ -511,22 +511,6 @@ pipeline {
                                     def uuidString = uuid.toString()
                                     def tag = uuidString[0..2]
                                     
-                                    // // // Get UTC date
-                                    // // def utcDate = bat(script: 'powershell -command "[DateTime]::UtcNow.ToString(\'yyMMdd_HHmm\')"', returnStdout: true).trim()
-                                    // // utcDate = utcDate.readLines().drop(1).join("\n")
-
-                                    // // Get the current UTC date and time
-                                    // LocalDateTime utcDateTime = LocalDateTime.now(ZoneOffset.UTC);
-
-                                    // // Define the desired format
-                                    // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMddyy_HHmm");
-
-                                    // // Format the UTC date and time
-                                    // String utcDateTimeFormatted = utcDateTime.format(formatter);
-
-                                    // Print the formatted UTC date and time
-                                    //System.out.println("Formatted UTC Date and Time: " + formattedDateTime);
-
                                     Date currentDate = new Date()
                                     def dateFormat = new java.text.SimpleDateFormat("MMddyyyy_HHmm")
                                     def currentDateStr = dateFormat.format(currentDate)
@@ -549,15 +533,15 @@ pipeline {
 
                                         // Check if 'ImageId' is empty
                                         if (cliOutputJson.ImageId.isEmpty()) {
-                                            unstable("No AMI ID returned for ${instanceName}. Moving on to next EC2 instance.")
+                                            unstable("No AMI ID returned for ${instanceId} - ${instanceName}. Moving on to next EC2 instance.")
                                             return
                                         }
 
-                                        echo "Successfully created AMI ${cliOutputJson.ImageId} - ${amiName} for ${instanceId}."
+                                        echo "Successfully created AMI ${cliOutputJson.ImageId} - ${amiName} for ${instanceId} - ${instanceName}."
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
-                                        unstable("Error in creating AMI for ${instanceId}. Moving on to next EC2 instance.")
+                                        unstable("Error in creating AMI for ${instanceId} - ${instanceName}. Moving on to next EC2 instance.")
                                     }
                                 }
                             }
