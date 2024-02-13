@@ -124,7 +124,7 @@ def findRegionNonGOSS(String instanceName, List<RegionCode> regionCodes) {
     return null // Return null if no match is found
 }
 
-def queueAMICreation(scheduledBuildId, account, instanceNames, instanceIDs, region, ticketNumber, mode,  date, time, secondsFromNow) {
+def queueAMICreation(amiCreationRequestId, account, instanceNames, instanceIDs, region, ticketNumber, mode,  date, time, secondsFromNow) {
     // def job = Hudson.instance.getJob('AMICreationPipeline')
     def job = Jenkins.instance.getItemByFullName('AMICreationPipeline')
 
@@ -141,7 +141,7 @@ def queueAMICreation(scheduledBuildId, account, instanceNames, instanceIDs, regi
         new StringParameterValue('Mode', mode),
         new StringParameterValue('Date', date),
         new StringParameterValue('Time', time),
-        new StringParameterValue('ScheduledBuildId', scheduledBuildId)
+        new StringParameterValue('AmiCreationRequestId', amiCreationRequestId)
     ]
 
     def future = job.scheduleBuild2(secondsFromNow, new ParametersAction(params))
@@ -158,7 +158,7 @@ def boolean fileExistsAndNotEmpty(String filePath) {
 def environment = ""
 def account = ""
 def role = 'AMICreationRole'
-def scheduledBuildId = ""
+def amiCreationRequestId = ""
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
@@ -398,8 +398,8 @@ pipeline {
                         def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
 
                         // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
-                        scheduledBuildId = UUID.randomUUID()
-                        scheduledBuildId = scheduledBuildId.toString()
+                        amiCreationRequestId = UUID.randomUUID()
+                        amiCreationRequestId = amiCreationRequestId.toString()
 
                         def newScheduledAMICreationObj = [
                             'Account': account,
@@ -410,11 +410,11 @@ pipeline {
                             'Date': params.Date,
                             'Time': params.Time,
                             'Mode': 'Express',
-                            'ScheduledBuildId': scheduledBuildId
+                            'AmiCreationRequestId': amiCreationRequestId
                         ]
 
                         if (isImminentExecution) {
-                            queueAMICreation(scheduledBuildId, account, validInstancesNamesStr, validInstancesIDsStr, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
+                            queueAMICreation(amiCreationRequestId, account, validInstancesNamesStr, validInstancesIDsStr, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
                         }
                         else {
                             // Initialize an empty list for the objects
@@ -449,7 +449,7 @@ pipeline {
                         }
 
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
-                        newScheduledAMICreationObjStr += "ScheduledBuildId: ${newScheduledAMICreationObj.ScheduledBuildId}\n"
+                        newScheduledAMICreationObjStr += "AmiCreationRequestId: ${newScheduledAMICreationObj.AmiCreationRequestId}\n"
                         newScheduledAMICreationObjStr += "Account: ${newScheduledAMICreationObj.Account}\n"
                         newScheduledAMICreationObjStr += "Region: ${newScheduledAMICreationObj.Region}\n"
                         newScheduledAMICreationObjStr += "InstanceNames: ${newScheduledAMICreationObj.InstanceNames}\n"
@@ -488,7 +488,7 @@ pipeline {
 
                         // Gets AWS account number from paramters
                         account = params.Account
-                        scheduledBuildId = params.ScheduledBuildId
+                        amiCreationRequestId = params.AmiCreationRequestId
 
                     }
 
@@ -713,14 +713,14 @@ pipeline {
                     }
 
                     // Filter the array to remove the object with the specified ID
-                    currentScheduledBuild = objectsList.findAll { it.ScheduledBuildId == scheduledBuildId }
+                    currentScheduledBuild = objectsList.findAll { it.AmiCreationRequestId == amiCreationRequestId }
 
                     if (!currentScheduledBuild) {
                         echo "Scheduled AMI creation request not found queue file. The request must either be imminent (within 15 mins) or it has been manually deleted."
                     }
                     else {
                         // Filter the array to remove the object with the specified ID
-                        objectsList = objectsList.findAll { it.ScheduledBuildId != scheduledBuildId }
+                        objectsList = objectsList.findAll { it.AmiCreationRequestId != amiCreationRequestId }
 
                         // Convert the list back to JSON string
                         def newJsonStr = JsonOutput.toJson(objectsList)
@@ -729,7 +729,7 @@ pipeline {
                         // Write the JSON string back to the file
                         writeFile(file: queueFilePath, text: prettyJsonStr)
 
-                        echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${scheduledBuildId}."
+                        echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${amiCreationRequestId}."
                     }                   
                 }
             }
