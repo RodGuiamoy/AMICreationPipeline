@@ -655,6 +655,7 @@ pipeline {
                         createdAMIs.each { detail ->
                             body += """
         <tr>
+            <td>${detail.instanceDetails.region}</td>
             <td>${detail.instanceDetails.instanceId}</td>
             <td>${detail.instanceDetails.instanceName}</td>
             <td>${detail.amiId}</td>
