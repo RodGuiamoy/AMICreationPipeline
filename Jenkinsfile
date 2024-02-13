@@ -394,9 +394,6 @@ pipeline {
 
                     // Iterate over each region and verify instances
                     instancesByRegion.each { region, instances ->
-                        // def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
-                        // def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
-
                         // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
                         amiCreationRequestId = UUID.randomUUID()
                         amiCreationRequestId = amiCreationRequestId.toString()
@@ -408,14 +405,12 @@ pipeline {
                             AMIs << amiDetails
                         }
 
-                        def newScheduledAMICreationObj = [
+                        def newAMICreationRequestObj = [
                             'AmiCreationRequestId': amiCreationRequestId,
                             'Status': 'PendingCreation',
                             'Account': account,
                             'Region': region,
                             'AMIs': AMIs,
-                            // 'InstanceNames': validInstancesNamesStr,
-                            // 'InstanceIDs': validInstancesIDsStr,
                             'TicketNumber': params.TicketNumber,
                             'Date': params.Date,
                             'Time': params.Time,
@@ -447,7 +442,7 @@ pipeline {
                             }
 
                             // Add the new object to the list
-                            objectsList << newScheduledAMICreationObj
+                            objectsList << newAMICreationRequestObj
 
                             // Convert the list back to JSON string
                             def newJsonStr = JsonOutput.toJson(objectsList)
@@ -531,6 +526,8 @@ pipeline {
                                 //     [id: 'TEST', name: 'name2']
                                 //     // Add more maps as needed
                                 // ]
+                                
+                                def AMIs = []
 
                                 instances.each { instance ->
                                     def instanceId = instance.instanceId
@@ -563,25 +560,70 @@ pipeline {
                                         def jsonSlurper = new groovy.json.JsonSlurper()
                                         def cliOutputJson = jsonSlurper.parseText(cliOutput)
 
+                                        amiID = cliOutputJson.ImageId
                                         // Check if 'ImageId' is empty
-                                        if (cliOutputJson.ImageId.isEmpty()) {
+                                        if (amiID.isEmpty()) {
                                             unstable("No AMI ID returned for ${instanceId} - ${instanceName}. Moving on to next EC2 instance.")
                                             return
                                         }
 
-                                        echo "Successfully created AMI ${cliOutputJson.ImageId} - ${amiName} for ${instanceId} - ${instanceName}."
+                                        echo "Successfully created AMI ${amiID} - ${amiName} for ${instanceId} - ${instanceName}."
 
-                                        def amiDetails = new AMIDetails(instance, amiName, cliOutputJson.ImageId)
+                                        // def amiDetails = new AMIDetails(instance, amiName, cliOutputJson.ImageId)
 
-                                        // echo "${amiDetails.toString()}"
-
-                                        createdAMIs << amiDetails
+                                        def amiDetails = new AMIDetails(instance, amiName, amiID, 'Pending')
+                                        
+                                        AMIs << amiDetails
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
                                         unstable("Error in creating AMI for ${instanceId} - ${instanceName}. Moving on to next EC2 instance.")
                                     }
                                 }
+
+                                amiCreationRequestId = UUID.randomUUID()
+                                amiCreationRequestId = amiCreationRequestId.toString()
+
+                                def newAMICreationRequestObj = [
+                                    'AmiCreationRequestId': amiCreationRequestId,
+                                    'Status': 'AwaitingAvailability',
+                                    'Account': account,
+                                    'Region': region,
+                                    'AMIs': AMIs,
+                                    'TicketNumber': ticketNumber,
+                                    // 'Date': params.Date,
+                                    // 'Time': params.Time,
+                                    'Mode': params.Mode,
+                                ]
+
+                                // Initialize an empty list for the objects
+                            def objectsList = []
+
+                            // Check if the file exists
+                            if (fileExistsAndNotEmpty(queueFilePath)) {
+                                // File exists and is not empty, read the existing content
+                                def existingContent = new File(queueFilePath).text
+                                def jsonSlurperClassic = new JsonSlurperClassic()
+
+                                // Try to parse the existing content, handle potential parsing errors
+                                try {
+                                    objectsList = jsonSlurperClassic.parseText(existingContent)
+                                } catch (Exception e) {
+
+                                    error ("Unable to parse json file. Please check for syntax errors.")
+                                    
+                                }
+                            }
+
+                            // Add the new object to the list
+                            objectsList << newAMICreationRequestObj
+
+                            // Convert the list back to JSON string
+                            def newJsonStr = JsonOutput.toJson(objectsList)
+                            def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                            // Write the JSON string back to the file
+                            writeFile(file: queueFilePath, text: prettyJsonStr)
                             }
                         }
                     }
