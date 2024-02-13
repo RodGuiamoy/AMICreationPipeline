@@ -639,7 +639,7 @@ pipeline {
 </head>
 <body>
 
-<p class="status-message">AMI(s) have been successfully created in AWS environment ${Environment}. Reference ticket: ${TicketNumber}</p>
+<p class="status-message">AMI(s) have been successfully created in AWS environment ${environment}. Reference ticket: ${TicketNumber}</p>
 
 
 <table>
