@@ -648,7 +648,6 @@ pipeline {
             <th>Region</th>
             <th>AMI ID</th>
             <th>AMI Name</th>
-            <th>AMI Status</th>
         </tr>
     </thead>
     <tbody>
@@ -660,7 +659,6 @@ pipeline {
             <td>${detail.instanceDetails.instanceName}</td>
             <td>${detail.amiId}</td>
             <td>${detail.amiName}</td>
-            <td>${detail.amiStatus}</td>
         </tr>
                             """
                         }
