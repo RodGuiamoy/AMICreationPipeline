@@ -29,8 +29,7 @@ properties([
                     script:
                     """
 if (Mode.equals("Scheduled")) {
-    // return "<input type='text' name='value' value='Enter date in MM/DD/YYYY format' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
-    return "<input type='text' name='value' value='02/24/2024' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
+    return "<input type='text' name='value' value='Enter date in MM/DD/YYYY format' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
 }
 else {
     return "<input type='text' name='value' value='N/A' disabled class=\\"jenkins-input\\" style='color: grey;'/>"
@@ -52,8 +51,7 @@ else {
                     script:
                     """
 if (Mode.equals("Scheduled")) {
-    // return "<input type='text' name='value' value='Enter time in military time format. e.g. 23:00' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
-    return "<input type='text' name='value' value='23:00' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
+    return "<input type='text' name='value' value='Enter time in military time format. e.g. 23:00' class=\\"jenkins-input\\" onclick='this.value=\\"\\";'/>"
 }
 else {
     return "<input type='text' name='value' value='N/A' disabled class=\\"jenkins-input\\" style='color: grey;'/>"
