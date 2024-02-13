@@ -409,7 +409,7 @@ pipeline {
 
                         def newScheduledAMICreationObj = [
                             'AmiCreationRequestId': amiCreationRequestId,
-                            'Status': 'PendingCreation'
+                            'Status': 'PendingCreation',
                             'Account': account,
                             'Region': region,
                             'AMIs': AMIs,
