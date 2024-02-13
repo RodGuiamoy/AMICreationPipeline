@@ -589,7 +589,6 @@ pipeline {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Deltek Styled HTML Table</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -640,6 +639,9 @@ pipeline {
 </head>
 <body>
 
+<p class="status-message">AMI(s) have been successfully created in AWS environment ${Environment}. Reference ticket: ${TicketNumber}</p>
+
+
 <table>
     <thead>
         <tr>
@@ -674,7 +676,7 @@ pipeline {
 
                         // Send the email using the email-ext plugin, including the table
                         emailext(
-                            subject: "AMI Details",
+                            subject: "AMI Creation Report",
                             body: body,
                             mimeType: 'text/html',
                             to: 'recipient@example.com'
