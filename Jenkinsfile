@@ -561,9 +561,9 @@ pipeline {
 
                                         def amiDetails = new AMIDetails(instance, amiName, cliOutputJson.ImageId)
 
-                                        echo "${amiDetails.toString()}"
+                                        // echo "${amiDetails.toString()}"
 
-                                        // validInstances << new AMIDetails(instance, amiName, cliOutputJson.ImageId)
+                                        amiCreations << amiDetails
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
@@ -576,87 +576,114 @@ pipeline {
                 }
             }
         }
-//         stage('Send Email') {
-//             steps {
-//                 script {
-//                     if (params.Mode == 'Scheduled') {
+        stage('Send Email') {
+            steps {
+                script {
+                    if (params.Mode == 'Scheduled') {
 
-//                     }
-//                     else {
-//                         def body = """
-// <!DOCTYPE html>
-// <html lang="en">
-// <head>
-// <meta charset="UTF-8">
-// <meta name="viewport" content="width=device-width, initial-scale=1.0">
-// <title>Deltek Styled HTML Table</title>
-// <style>
-//     body {
-//         font-family: Arial, sans-serif;
-//         margin: 0;
-//         padding: 0 20px;
-//         box-sizing: border-box;
-//     }
-//     table {
-//         width: 100%;
-//         border-collapse: collapse;
-//         margin: 25px 0;
-//         font-size: 0.9em;
-//         min-width: 400px;
-//         border-radius: 5px 5px 0 0;
-//         overflow: hidden;
-//         box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-//     }
-//     thead tr {
-//         background-color: #005B9A; /* Deltek's blue */
-//         color: #ffffff;
-//         text-align: left;
-//     }
-//     th, td {
-//         padding: 12px 15px;
-//     }
-//     tbody tr {
-//         border-bottom: 1px solid #dddddd;
-//     }
+                    }
+                    else {
+                        def body = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deltek Styled HTML Table</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0 20px;
+        box-sizing: border-box;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        font-size: 0.9em;
+        min-width: 400px;
+        border-radius: 5px 5px 0 0;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    }
+    thead tr {
+        background-color: #005B9A; /* Deltek's blue */
+        color: #ffffff;
+        text-align: left;
+    }
+    th, td {
+        padding: 12px 15px;
+    }
+    tbody tr {
+        border-bottom: 1px solid #dddddd;
+    }
 
-//     tbody tr:nth-of-type(even) {
-//         background-color: #f0f0f0; /* Light gray for better readability */
-//     }
+    tbody tr:nth-of-type(even) {
+        background-color: #f0f0f0; /* Light gray for better readability */
+    }
 
-//     tbody tr:last-of-type {
-//         border-bottom: 2px solid #005B9A;
-//     }
+    tbody tr:last-of-type {
+        border-bottom: 2px solid #005B9A;
+    }
 
-//     tbody tr.active-row {
-//         font-weight: bold;
-//         color: #005B9A;
-//     }
-//     .status-message {
-//         margin-top: 20px;
-//         font-size: 0.9em;
-//         color: #333; /* Dark gray for the message */
-//     }
-// </style>
-// </head>
-// <body>
+    tbody tr.active-row {
+        font-weight: bold;
+        color: #005B9A;
+    }
+    .status-message {
+        margin-top: 20px;
+        font-size: 0.9em;
+        color: #333; /* Dark gray for the message */
+    }
+</style>
+</head>
+<body>
 
-// <table>
-//     <thead>
-//         <tr>
-//             <th>InstanceID</th>
-//             <th>InstanceName</th>
-//             <th>Region</th>
-//             <th>AMI ID</th>
-//             <th>AMI Name</th>
-//             <th>AMI Status</th>
-//         </tr>
-//     </thead>
-//     <tbody>
-// """
-//                     }
-//                 }
-//             }
-//         }
+<table>
+    <thead>
+        <tr>
+            <th>InstanceID</th>
+            <th>InstanceName</th>
+            <th>Region</th>
+            <th>AMI ID</th>
+            <th>AMI Name</th>
+            <th>AMI Status</th>
+        </tr>
+    </thead>
+    <tbody>
+"""
+                        createdAMIs.each { detail ->
+                            body += """
+        <tr>
+            <td>${detail.instanceDetails.instanceId}</td>
+            <td>${detail.instanceDetails.instanceName}</td>
+            <td>${detail.amiId}</td>
+            <td>${detail.amiName}</td>
+            <td>${detail.amiStatus}</td>
+        </tr>
+                            """
+                        }
+
+                        // Close the table
+                        body += """
+    </tbody>
+</table>
+</body>
+</html>
+""" 
+
+                        // Send the email using the email-ext plugin, including the table
+                        emailext(
+                            subject: "AMI Details",
+                            body: body,
+                            mimeType: 'text/html',
+                            to: 'recipient@example.com'
+                        )
+                    }
+                }
+            }
+        }
         stage('CleanUp') {
             when {
                 expression { params.Mode == 'Express'}
