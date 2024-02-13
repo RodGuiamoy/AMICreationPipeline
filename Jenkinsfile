@@ -83,6 +83,8 @@ class AMIDetails {
     InstanceDetails instanceDetails  // Embedding InstanceDetails class
     String amiName
     String amiId
+    String status
+    String creationDate
 
     // Constructor to initialize all fields
     AMIDetails(InstanceDetails instanceDetails, String amiName, String amiId) {
@@ -576,7 +578,7 @@ pipeline {
                 }
             }
         }
-        stage('Send Email') {
+        stage('Send Notification') {
             steps {
                 script {
                     if (params.Mode == 'Scheduled') {
