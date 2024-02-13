@@ -84,7 +84,6 @@ class AMIDetails {
     String amiName
     String amiId
     String status
-    String creationDate
 
     // Constructor to initialize all fields
     AMIDetails(InstanceDetails instanceDetails, String amiName, String amiId) {
@@ -394,23 +393,33 @@ pipeline {
 
                     // Iterate over each region and verify instances
                     instancesByRegion.each { region, instances ->
-                        def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
-                        def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
+                        // def validInstancesNamesStr = instances.collect { it.instanceName }.join(',')
+                        // def validInstancesIDsStr = instances.collect { it.instanceId }.join(',')
 
                         // We will set a unique valued parameter so manual triggered builds with the same parameters will not override the scheduled build
                         amiCreationRequestId = UUID.randomUUID()
                         amiCreationRequestId = amiCreationRequestId.toString()
 
+                        def AMIs = []
+
+                        isntances.each { -> instance
+                            def amiDetails = new AMIDetails(instance)
+                            AMIs << amiDetails
+                        }
+
                         def newScheduledAMICreationObj = [
+                            'AmiCreationRequestId': amiCreationRequestId,
+                            'Status': 'PendingCreation'
                             'Account': account,
                             'Region': region,
-                            'InstanceNames': validInstancesNamesStr,
-                            'InstanceIDs': validInstancesIDsStr,
+                            'AMIs': AMIs,
+                            // 'InstanceNames': validInstancesNamesStr,
+                            // 'InstanceIDs': validInstancesIDsStr,
                             'TicketNumber': params.TicketNumber,
                             'Date': params.Date,
                             'Time': params.Time,
                             'Mode': 'Express',
-                            'AmiCreationRequestId': amiCreationRequestId
+                            
                         ]
 
                         if (isImminentExecution) {
