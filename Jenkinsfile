@@ -86,10 +86,11 @@ class AMIDetails {
     String status
 
     // Constructor to initialize all fields
-    AMIDetails(InstanceDetails instanceDetails, String amiName, String amiId) {
+    AMIDetails(InstanceDetails instanceDetails, String amiName, String amiId, String status) {
         this.instanceDetails = instanceDetails
         this.amiName = amiName
         this.amiId = amiId
+        this.amiId = status
     }
 
     // Optional: toString method for easy printing
