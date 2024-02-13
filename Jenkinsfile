@@ -563,7 +563,7 @@ pipeline {
 
                                         // echo "${amiDetails.toString()}"
 
-                                        amiCreations << amiDetails
+                                        createdAMIs << amiDetails
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
