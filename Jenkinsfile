@@ -643,9 +643,9 @@ pipeline {
 <table>
     <thead>
         <tr>
-            <th>InstanceID</th>
-            <th>InstanceName</th>
             <th>Region</th>
+            <th>Instance ID</th>
+            <th>InstanceName</th>
             <th>AMI ID</th>
             <th>AMI Name</th>
         </tr>
