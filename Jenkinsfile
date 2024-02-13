@@ -402,7 +402,7 @@ pipeline {
 
                         def AMIs = []
 
-                        isntances.each { -> instance
+                        instances.each { -> instance
                             def amiDetails = new AMIDetails(instance)
                             AMIs << amiDetails
                         }
