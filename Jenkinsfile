@@ -90,7 +90,7 @@ class AMIDetails {
         this.instanceDetails = instanceDetails
         this.amiName = amiName
         this.amiId = amiId
-        this.amiId = status
+        this.status = status
     }
 
     // Optional: toString method for easy printing
