@@ -425,10 +425,10 @@ pipeline {
                         amiCreationRequestId = amiCreationRequestId.toString()
 
                         def AMIs = []
-
                         instances.each { instance ->
                             def amiDetails = new AMIDetails(instance, '', '', '')
                             AMIs << amiDetails
+
                         }
 
                         def amiCreationRequestObj = [
@@ -444,17 +444,17 @@ pipeline {
                             
                         ]
 
-                        if (isImminentExecution) {
-                            queueAMICreation(amiCreationRequestId, account, validInstancesNamesStr, validInstancesIDsStr, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
-                        }
-                        else {
-
-                            createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
-                        }
-
+                        
                         String instanceNames = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceName }.join(',')
                         String instanceIds = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceId }.join(',')
 
+                        // Puts imminent AMI Creation request for execution
+                        if (isImminentExecution) {
+                            queueAMICreation(amiCreationRequestId, account, instanceNames, instanceIds, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
+                        }
+                        
+                        createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
+                        
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
                         newScheduledAMICreationObjStr += "AmiCreationRequestId: ${amiCreationRequestObj.AmiCreationRequestId}\n"
                         newScheduledAMICreationObjStr += "Account: ${amiCreationRequestObj.Account}\n"
