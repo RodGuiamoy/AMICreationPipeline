@@ -154,6 +154,32 @@ def boolean fileExistsAndNotEmpty(String filePath) {
     }
 }
 
+// The new method to add an object to the queue
+void createAMICreationRequest(Object newAMICreationRequest, String amiCreationDBPath) {
+    def objectsList = []
+
+    if (fileExistsAndNotEmpty(amiCreationDBPath)) {
+        try {
+            def existingContent = new File(amiCreationDBPath).text
+            def jsonSlurperClassic = new JsonSlurperClassic()
+            objectsList = jsonSlurperClassic.parseText(existingContent)
+        } catch (Exception e) {
+            println("Unable to parse json file. Please check for syntax errors.")
+            return // Exit the method if there's a parsing error
+        }
+    }
+
+    // Add the new object to the list
+    objectsList << newAMICreationRequest
+
+    // Convert the list back to JSON string and pretty print it
+    def newJsonStr = JsonOutput.toJson(objectsList)
+    def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+    // Write the JSON string back to the file
+    writeFile(file: amiCreationDBPath, text: prettyJsonStr)
+}
+
 // Variables used in 'GetEnvironmentDetails' stage
 def environment = ""
 def account = ""
@@ -168,7 +194,7 @@ def createdAMIs = []
 String executionDateTimeStr = ""
 int secondsFromNow = 0
 boolean isImminentExecution = false
-def queueFilePath = 'C:\\code\\AMICreationQueueService\\Test.json'
+def amiCreationDBPath = 'C:\\code\\AMICreationQueueService\\Test.json'
 
 def regionCodesGoss = [
     new RegionCode(code: "ASE1", region: "ap-southeast-1"),
@@ -405,7 +431,7 @@ pipeline {
                             AMIs << amiDetails
                         }
 
-                        def newAMICreationRequestObj = [
+                        def amiCreationRequestObj = [
                             'AmiCreationRequestId': amiCreationRequestId,
                             'Status': 'PendingCreation',
                             'Account': account,
@@ -422,34 +448,37 @@ pipeline {
                             queueAMICreation(amiCreationRequestId, account, validInstancesNamesStr, validInstancesIDsStr, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
                         }
                         else {
-                            // Initialize an empty list for the objects
-                            def objectsList = []
 
-                            // Check if the file exists
-                            if (fileExistsAndNotEmpty(queueFilePath)) {
-                                // File exists and is not empty, read the existing content
-                                def existingContent = new File(queueFilePath).text
-                                def jsonSlurperClassic = new JsonSlurperClassic()
+                            createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
 
-                                // Try to parse the existing content, handle potential parsing errors
-                                try {
-                                    objectsList = jsonSlurperClassic.parseText(existingContent)
-                                } catch (Exception e) {
+                            // // Initialize an empty list for the objects
+                            // def objectsList = []
 
-                                    error ("Unable to parse json file. Please check for syntax errors.")
+                            // // Check if the file exists
+                            // if (fileExistsAndNotEmpty(queueFilePath)) {
+                            //     // File exists and is not empty, read the existing content
+                            //     def existingContent = new File(queueFilePath).text
+                            //     def jsonSlurperClassic = new JsonSlurperClassic()
+
+                            //     // Try to parse the existing content, handle potential parsing errors
+                            //     try {
+                            //         objectsList = jsonSlurperClassic.parseText(existingContent)
+                            //     } catch (Exception e) {
+
+                            //         error ("Unable to parse json file. Please check for syntax errors.")
                                     
-                                }
-                            }
+                            //     }
+                            // }
 
-                            // Add the new object to the list
-                            objectsList << newAMICreationRequestObj
+                            // // Add the new object to the list
+                            // objectsList << newAMICreationRequestObj
 
-                            // Convert the list back to JSON string
-                            def newJsonStr = JsonOutput.toJson(objectsList)
-                            def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+                            // // Convert the list back to JSON string
+                            // def newJsonStr = JsonOutput.toJson(objectsList)
+                            // def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
 
-                            // Write the JSON string back to the file
-                            writeFile(file: queueFilePath, text: prettyJsonStr)
+                            // // Write the JSON string back to the file
+                            // writeFile(file: queueFilePath, text: prettyJsonStr)
 
                         }
 
@@ -584,7 +613,7 @@ pipeline {
                                 amiCreationRequestId = UUID.randomUUID()
                                 amiCreationRequestId = amiCreationRequestId.toString()
 
-                                def newAMICreationRequestObj = [
+                                def amiCreationRequestObj = [
                                     'AmiCreationRequestId': amiCreationRequestId,
                                     'Status': 'AwaitingAvailability',
                                     'Account': account,
@@ -596,34 +625,37 @@ pipeline {
                                     'Mode': params.Mode,
                                 ]
 
-                                // Initialize an empty list for the objects
-                            def objectsList = []
+                                createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
 
-                            // Check if the file exists
-                            if (fileExistsAndNotEmpty(queueFilePath)) {
-                                // File exists and is not empty, read the existing content
-                                def existingContent = new File(queueFilePath).text
-                                def jsonSlurperClassic = new JsonSlurperClassic()
 
-                                // Try to parse the existing content, handle potential parsing errors
-                                try {
-                                    objectsList = jsonSlurperClassic.parseText(existingContent)
-                                } catch (Exception e) {
+                                // // Initialize an empty list for the objects
+                                // def objectsList = []
 
-                                    error ("Unable to parse json file. Please check for syntax errors.")
-                                    
-                                }
-                            }
+                                // // Check if the file exists
+                                // if (fileExistsAndNotEmpty(queueFilePath)) {
+                                //     // File exists and is not empty, read the existing content
+                                //     def existingContent = new File(queueFilePath).text
+                                //     def jsonSlurperClassic = new JsonSlurperClassic()
 
-                            // Add the new object to the list
-                            objectsList << newAMICreationRequestObj
+                                //     // Try to parse the existing content, handle potential parsing errors
+                                //     try {
+                                //         objectsList = jsonSlurperClassic.parseText(existingContent)
+                                //     } catch (Exception e) {
 
-                            // Convert the list back to JSON string
-                            def newJsonStr = JsonOutput.toJson(objectsList)
-                            def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+                                //         error ("Unable to parse json file. Please check for syntax errors.")
+                                        
+                                //     }
+                                // }
 
-                            // Write the JSON string back to the file
-                            writeFile(file: queueFilePath, text: prettyJsonStr)
+                                // // Add the new object to the list
+                                // objectsList << newAMICreationRequestObj
+
+                                // // Convert the list back to JSON string
+                                // def newJsonStr = JsonOutput.toJson(objectsList)
+                                // def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                                // // Write the JSON string back to the file
+                                // writeFile(file: queueFilePath, text: prettyJsonStr)
                             }
                         }
                     }
@@ -789,7 +821,3 @@ pipeline {
         }
     }
 }
-
-
-
-
