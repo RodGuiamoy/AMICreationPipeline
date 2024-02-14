@@ -448,12 +448,13 @@ pipeline {
                         String instanceNames = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceName }.join(',')
                         String instanceIds = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceId }.join(',')
 
-                        // Puts imminent AMI Creation request for execution
-                        if (isImminentExecution) {
+                        if (isImminentExecution) { // Puts imminent AMI Creation request for execution
                             queueAMICreation(amiCreationRequestId, account, instanceNames, instanceIds, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
                         }
+                        else { // Else puts request in AMICreationDB as PendingCreation
+                            createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
+                        }
                         
-                        createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
                         
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
                         newScheduledAMICreationObjStr += "AmiCreationRequestId: ${amiCreationRequestObj.AmiCreationRequestId}\n"
