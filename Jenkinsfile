@@ -723,53 +723,53 @@ pipeline {
                 }
             }
         }
-        stage('CleanUp') {
-            when {
-                expression { params.Mode == 'Express'}
-            }
+        // stage('CleanUp') {
+        //     when {
+        //         expression { params.Mode == 'Express'}
+        //     }
 
-            steps {
-                script {
-                    // Initialize an empty list for the objects
-                    def objectsList = []
+        //     steps {
+        //         script {
+        //             // Initialize an empty list for the objects
+        //             def objectsList = []
 
-                    // Check if the file exists
-                    if (fileExistsAndNotEmpty(amiCreationDBPath)) {
-                        // File exists and is not empty, read the existing content
-                        def existingContent = new File(amiCreationDBPath).text
-                        def jsonSlurperClassic = new JsonSlurperClassic()
+        //             // Check if the file exists
+        //             if (fileExistsAndNotEmpty(amiCreationDBPath)) {
+        //                 // File exists and is not empty, read the existing content
+        //                 def existingContent = new File(amiCreationDBPath).text
+        //                 def jsonSlurperClassic = new JsonSlurperClassic()
 
-                        // Try to parse the existing content, handle potential parsing errors
-                        try {
-                            objectsList = jsonSlurperClassic.parseText(existingContent)
-                        } catch (Exception e) {
+        //                 // Try to parse the existing content, handle potential parsing errors
+        //                 try {
+        //                     objectsList = jsonSlurperClassic.parseText(existingContent)
+        //                 } catch (Exception e) {
 
-                            error ("Unable to parse json file. Please check for syntax errors.")
-                        }
-                    }
+        //                     error ("Unable to parse json file. Please check for syntax errors.")
+        //                 }
+        //             }
 
-                    // Filter the array to remove the object with the specified ID
-                    currentScheduledBuild = objectsList.findAll { it.AmiCreationRequestId == amiCreationRequestId }
+        //             // Filter the array to remove the object with the specified ID
+        //             currentScheduledBuild = objectsList.findAll { it.AmiCreationRequestId == amiCreationRequestId }
 
-                    if (!currentScheduledBuild) {
-                        echo "Scheduled AMI creation request not found queue file. The request must either be imminent (within 15 mins) or it has been manually deleted."
-                    }
-                    else {
-                        // Filter the array to remove the object with the specified ID
-                        objectsList = objectsList.findAll { it.AmiCreationRequestId != amiCreationRequestId }
+        //             if (!currentScheduledBuild) {
+        //                 echo "Scheduled AMI creation request not found queue file. The request must either be imminent (within 15 mins) or it has been manually deleted."
+        //             }
+        //             else {
+        //                 // Filter the array to remove the object with the specified ID
+        //                 objectsList = objectsList.findAll { it.AmiCreationRequestId != amiCreationRequestId }
 
-                        // Convert the list back to JSON string
-                        def newJsonStr = JsonOutput.toJson(objectsList)
-                        def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+        //                 // Convert the list back to JSON string
+        //                 def newJsonStr = JsonOutput.toJson(objectsList)
+        //                 def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
 
-                        // Write the JSON string back to the file
-                        writeFile(file: amiCreationDBPath, text: prettyJsonStr)
+        //                 // Write the JSON string back to the file
+        //                 writeFile(file: amiCreationDBPath, text: prettyJsonStr)
 
-                        echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${amiCreationRequestId}."
-                    }                   
-                }
-            }
+        //                 echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${amiCreationRequestId}."
+        //             }                   
+        //         }
+        //     }
             
-        }
+        // }
     }
 }
