@@ -451,9 +451,10 @@ pipeline {
                         if (isImminentExecution) { // Puts imminent AMI Creation request for execution
                             queueAMICreation(amiCreationRequestId, account, instanceNames, instanceIds, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
                         }
-                        else { // Else puts request in AMICreationDB as PendingCreation
-                            createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
-                        }
+                        
+                        // Puts request in AMICreationDB as PendingCreation
+                        createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
+                        //}
                         
                         
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
@@ -584,22 +585,29 @@ pipeline {
                                     }
                                 }
 
-                                amiCreationRequestId = UUID.randomUUID()
-                                amiCreationRequestId = amiCreationRequestId.toString()
+                                if (params.Mode == 'On-Demand') {
+                                    amiCreationRequestId = UUID.randomUUID()
+                                    amiCreationRequestId = amiCreationRequestId.toString()
 
-                                def amiCreationRequestObj = [
-                                    'AmiCreationRequestId': amiCreationRequestId,
-                                    'Status': 'AwaitingAvailability',
-                                    'Account': account,
-                                    'Region': region,
-                                    'AMIs': AMIs,
-                                    'TicketNumber': ticketNumber,
-                                    // 'Date': params.Date,
-                                    // 'Time': params.Time,
-                                    'Mode': params.Mode,
-                                ]
+                                    def amiCreationRequestObj = [
+                                        'AmiCreationRequestId': amiCreationRequestId,
+                                        'Status': 'AwaitingAvailability',
+                                        'Account': account,
+                                        'Region': region,
+                                        'AMIs': AMIs,
+                                        'TicketNumber': ticketNumber,
+                                        // 'Date': params.Date,
+                                        // 'Time': params.Time,
+                                        'Mode': params.Mode,
+                                    ]
 
-                                createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
+                                    createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
+                                }
+                                else if (params.Mode == 'Express') {
+
+                                }
+
+                                
                             }
                         }
                     }
@@ -726,9 +734,9 @@ pipeline {
                     def objectsList = []
 
                     // Check if the file exists
-                    if (fileExistsAndNotEmpty(queueFilePath)) {
+                    if (fileExistsAndNotEmpty(amiCreationDBPath)) {
                         // File exists and is not empty, read the existing content
-                        def existingContent = new File(queueFilePath).text
+                        def existingContent = new File(amiCreationDBPath).text
                         def jsonSlurperClassic = new JsonSlurperClassic()
 
                         // Try to parse the existing content, handle potential parsing errors
@@ -755,7 +763,7 @@ pipeline {
                         def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
 
                         // Write the JSON string back to the file
-                        writeFile(file: queueFilePath, text: prettyJsonStr)
+                        writeFile(file: amiCreationDBPath, text: prettyJsonStr)
 
                         echo "Successfully fulfilled scheduled AMI Creation Request with build ID ${amiCreationRequestId}."
                     }                   
