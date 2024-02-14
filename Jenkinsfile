@@ -450,47 +450,20 @@ pipeline {
                         else {
 
                             createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
-
-                            // // Initialize an empty list for the objects
-                            // def objectsList = []
-
-                            // // Check if the file exists
-                            // if (fileExistsAndNotEmpty(queueFilePath)) {
-                            //     // File exists and is not empty, read the existing content
-                            //     def existingContent = new File(queueFilePath).text
-                            //     def jsonSlurperClassic = new JsonSlurperClassic()
-
-                            //     // Try to parse the existing content, handle potential parsing errors
-                            //     try {
-                            //         objectsList = jsonSlurperClassic.parseText(existingContent)
-                            //     } catch (Exception e) {
-
-                            //         error ("Unable to parse json file. Please check for syntax errors.")
-                                    
-                            //     }
-                            // }
-
-                            // // Add the new object to the list
-                            // objectsList << newAMICreationRequestObj
-
-                            // // Convert the list back to JSON string
-                            // def newJsonStr = JsonOutput.toJson(objectsList)
-                            // def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
-
-                            // // Write the JSON string back to the file
-                            // writeFile(file: queueFilePath, text: prettyJsonStr)
-
                         }
 
+                        String instanceNames = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceName }.join(',')
+                        String instanceIds = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceId }.join(',')
+
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
-                        newScheduledAMICreationObjStr += "AmiCreationRequestId: ${newScheduledAMICreationObj.AmiCreationRequestId}\n"
-                        newScheduledAMICreationObjStr += "Account: ${newScheduledAMICreationObj.Account}\n"
-                        newScheduledAMICreationObjStr += "Region: ${newScheduledAMICreationObj.Region}\n"
-                        newScheduledAMICreationObjStr += "InstanceNames: ${newScheduledAMICreationObj.InstanceNames}\n"
-                        newScheduledAMICreationObjStr += "InstanceIDs: ${newScheduledAMICreationObj.InstanceIDs}\n"
-                        newScheduledAMICreationObjStr += "TicketNumber: ${newScheduledAMICreationObj.TicketNumber}\n"
-                        newScheduledAMICreationObjStr += "Date: ${newScheduledAMICreationObj.Date}\n"
-                        newScheduledAMICreationObjStr += "Time: ${newScheduledAMICreationObj.Time}\n"
+                        newScheduledAMICreationObjStr += "AmiCreationRequestId: ${amiCreationRequestObj.AmiCreationRequestId}\n"
+                        newScheduledAMICreationObjStr += "Account: ${amiCreationRequestObj.Account}\n"
+                        newScheduledAMICreationObjStr += "Region: ${amiCreationRequestObj.Region}\n"
+                        newScheduledAMICreationObjStr += "InstanceNames: ${instanceNames}\n"
+                        newScheduledAMICreationObjStr += "InstanceIDs: ${instanceIds}\n"
+                        newScheduledAMICreationObjStr += "TicketNumber: ${amiCreationRequestObj.TicketNumber}\n"
+                        newScheduledAMICreationObjStr += "Date: ${amiCreationRequestObj.Date}\n"
+                        newScheduledAMICreationObjStr += "Time: ${amiCreationRequestObj.Time}\n"
                     
                         echo "${newScheduledAMICreationObjStr}"
 
@@ -626,36 +599,6 @@ pipeline {
                                 ]
 
                                 createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
-
-
-                                // // Initialize an empty list for the objects
-                                // def objectsList = []
-
-                                // // Check if the file exists
-                                // if (fileExistsAndNotEmpty(queueFilePath)) {
-                                //     // File exists and is not empty, read the existing content
-                                //     def existingContent = new File(queueFilePath).text
-                                //     def jsonSlurperClassic = new JsonSlurperClassic()
-
-                                //     // Try to parse the existing content, handle potential parsing errors
-                                //     try {
-                                //         objectsList = jsonSlurperClassic.parseText(existingContent)
-                                //     } catch (Exception e) {
-
-                                //         error ("Unable to parse json file. Please check for syntax errors.")
-                                        
-                                //     }
-                                // }
-
-                                // // Add the new object to the list
-                                // objectsList << newAMICreationRequestObj
-
-                                // // Convert the list back to JSON string
-                                // def newJsonStr = JsonOutput.toJson(objectsList)
-                                // def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
-
-                                // // Write the JSON string back to the file
-                                // writeFile(file: queueFilePath, text: prettyJsonStr)
                             }
                         }
                     }
