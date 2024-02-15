@@ -622,7 +622,7 @@ pipeline {
                                     amiCreationRequest.Status = 'AwaitingAvailability'
 
                                     AMIs.each { newAMI ->
-                                        amiDataFromDB = amiCreationRequest.AMIs.find { it.instanceDetails.instanceId == newAMI.instanceDetails.instanceId}
+                                        def amiDataFromDB = amiCreationRequest.AMIs.find { it.instanceDetails.instanceId == newAMI.instanceDetails.instanceId}
 
                                         amiDataFromDb.amiId = newAMI.amiId
                                         amiDataFromDb.amiName = newAMI.amiName
