@@ -433,7 +433,7 @@ pipeline {
 
                         def amiCreationRequestObj = [
                             'AmiCreationRequestId': amiCreationRequestId,
-                            'Status': 'PendingCreation',
+                            'Status': 'Scheduled',
                             'Account': account,
                             'Region': region,
                             'AMIs': AMIs,
@@ -450,6 +450,8 @@ pipeline {
 
                         if (isImminentExecution) { // Puts imminent AMI Creation request for execution
                             queueAMICreation(amiCreationRequestId, account, instanceNames, instanceIds, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
+
+                            amiCreationRequestObj.Status = 'QueuedForExecution'
                         }
                         
                         // Puts request in AMICreationDB as PendingCreation
@@ -636,20 +638,6 @@ pipeline {
 
                                     // Write the JSON string back to the file
                                     writeFile(file: amiCreationDBPath, text: prettyJsonStr)
-
-
-                                    // // Find the object with the matching request ID and update its fields
-                                    // objectsList.each { entry ->
-                                    //     if (entry.AmiCreationRequestId == requestId) {
-                                    //         AMIs.each { newAMI ->
-                                    //             entry.AMIs.each { ami ->
-                                    //                 ami.amiId = amiId
-                                    //                 ami.amiName = amiName
-                                    //                 ami.status = amiStatus
-                                    //             }
-                                    //         }
-                                    //     }
-                                    // }
                                 }
                             }
                         }
