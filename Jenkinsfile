@@ -624,9 +624,9 @@ pipeline {
                                     AMIs.each { newAMI ->
                                         def amiDataFromDB = amiCreationRequest.AMIs.find { it.instanceDetails.instanceId == newAMI.instanceDetails.instanceId}
 
-                                        amiDataFromDb.amiId = newAMI.amiId
-                                        amiDataFromDb.amiName = newAMI.amiName
-                                        amiDataFromDb.status = 'Pending'
+                                        amiDataFromDB.amiId = newAMI.amiId
+                                        amiDataFromDB.amiName = newAMI.amiName
+                                        amiDataFromDB.status = 'Pending'
 
                                     }
 
