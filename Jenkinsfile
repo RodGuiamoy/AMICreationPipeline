@@ -604,10 +604,53 @@ pipeline {
                                     createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
                                 }
                                 else if (params.Mode == 'Express') {
+                                    
+                                    def objectsList = []
 
+                                    if (fileExistsAndNotEmpty(amiCreationDBPath)) {
+                                        try {
+                                            def existingContent = new File(amiCreationDBPath).text
+                                            def jsonSlurperClassic = new JsonSlurperClassic()
+                                            objectsList = jsonSlurperClassic.parseText(existingContent)
+                                        } catch (Exception e) {
+                                            println("Unable to parse json file. Please check for syntax errors.")
+                                            return // Exit the method if there's a parsing error
+                                        }
+                                    }
+
+                                    def amiCreationRequest = objectsList.find { it.AmiCreationRequestId == amiCreationRequestId }
+                                    amiCreationRequest.Status = 'AwaitingAvailability'
+
+                                    AMIs.each { newAMI ->
+                                        amiDataFromDB = amiCreationRequest.AMIs.find { it.instanceDetails.instanceId == newAMI.instanceDetails.instanceId}
+
+                                        amiDataFromDb.amiId = newAMI.amiId
+                                        amiDataFromDb.amiName = newAMI.amiName
+                                        amiDataFromDb.status = 'Pending'
+
+                                    }
+
+                                    // Convert the list back to JSON string and pretty print it
+                                    def newJsonStr = JsonOutput.toJson(objectsList)
+                                    def prettyJsonStr = JsonOutput.prettyPrint(newJsonStr)
+
+                                    // Write the JSON string back to the file
+                                    writeFile(file: amiCreationDBPath, text: prettyJsonStr)
+
+
+                                    // // Find the object with the matching request ID and update its fields
+                                    // objectsList.each { entry ->
+                                    //     if (entry.AmiCreationRequestId == requestId) {
+                                    //         AMIs.each { newAMI ->
+                                    //             entry.AMIs.each { ami ->
+                                    //                 ami.amiId = amiId
+                                    //                 ami.amiName = amiName
+                                    //                 ami.status = amiStatus
+                                    //             }
+                                    //         }
+                                    //     }
+                                    // }
                                 }
-
-                                
                             }
                         }
                     }
