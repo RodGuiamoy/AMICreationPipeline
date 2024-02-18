@@ -182,6 +182,15 @@ void createAMICreationRequest(Object newAMICreationRequest, String amiCreationDB
 
 
 void sendEmailNotification (Object AMICreationRequest) {
+    def message = ""
+
+    if (AMICreationRequest.Status == "AwaitingAvailability") {
+        message = "AMI(s) have been successfully created in AWS environment ${AMICreationRequest.Environment}. Reference ticket: ${AMICreationRequest.TicketNumber}"
+    }
+    else if ((AMICreationRequest.Status == "Scheduled") || (AMICreationRequest.Status == "QueuedForExecution")) {
+        message = "AMI creation request has been scheduled to be executed in ${AMICreationRequest.Date} ${AMICreationRequest.Time} in AWS environment ${AMICreationRequest.Environment}. Reference ticket: ${AMICreationRequest.TicketNumber}"
+    }
+    
     def body = """
 <!DOCTYPE html>
 <html lang="en">
@@ -238,7 +247,7 @@ void sendEmailNotification (Object AMICreationRequest) {
 </head>
 <body>
 
-<! -- <p class="status-message">AMI(s) have been successfully created in AWS environment ${environment}. Reference ticket: ${TicketNumber}</p> -->
+<p class="status-message">${message}</p> -->
 
 
 <table>
@@ -539,6 +548,7 @@ pipeline {
                             'AmiCreationRequestId': amiCreationRequestId,
                             'Status': 'Scheduled',
                             'Account': account,
+                            'Environment': environment,
                             'Region': region,
                             'AMIs': AMIs,
                             'TicketNumber': params.TicketNumber,
@@ -706,6 +716,7 @@ pipeline {
                                         'AmiCreationRequestId': amiCreationRequestId,
                                         'Status': 'AwaitingAvailability',
                                         'Account': account,
+                                        'Environment': environment,
                                         'Region': region,
                                         'AMIs': AMIs,
                                         'TicketNumber': ticketNumber,
