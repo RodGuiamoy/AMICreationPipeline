@@ -180,6 +180,110 @@ void createAMICreationRequest(Object newAMICreationRequest, String amiCreationDB
     writeFile(file: amiCreationDBPath, text: prettyJsonStr)
 }
 
+
+void sendEmailNotification (Object AMICreationRequest) {
+    def body = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0 20px;
+        box-sizing: border-box;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        font-size: 0.9em;
+        min-width: 400px;
+        border-radius: 5px 5px 0 0;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    }
+    thead tr {
+        background-color: #005B9A; /* Deltek's blue */
+        color: #ffffff;
+        text-align: left;
+    }
+    th, td {
+        padding: 12px 15px;
+    }
+    tbody tr {
+        border-bottom: 1px solid #dddddd;
+    }
+
+    tbody tr:nth-of-type(even) {
+        background-color: #f0f0f0; /* Light gray for better readability */
+    }
+
+    tbody tr:last-of-type {
+        border-bottom: 2px solid #005B9A;
+    }
+
+    tbody tr.active-row {
+        font-weight: bold;
+        color: #005B9A;
+    }
+    .status-message {
+        margin-top: 20px;
+        font-size: 0.9em;
+        color: #333; /* Dark gray for the message */
+    }
+</style>
+</head>
+<body>
+
+<! -- <p class="status-message">AMI(s) have been successfully created in AWS environment ${environment}. Reference ticket: ${TicketNumber}</p> -->
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Region</th>
+            <th>Instance ID</th>
+            <th>InstanceName</th>
+            <th>AMI ID</th>
+            <th>AMI Name</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+"""
+                        AMICreationRequest.AMIs.each { AMI ->
+                            body += """
+        <tr>
+            <td>${AMI.instanceDetails.region}</td>
+            <td>${AMI.instanceDetails.instanceId}</td>
+            <td>${AMI.instanceDetails.instanceName}</td>
+            <td>${AMI.amiId}</td>
+            <td>${AMI.amiName}</td>
+            <td>${AMI.status}</td>
+        </tr>
+                            """
+                        }
+
+                        // Close the table
+                        body += """
+    </tbody>
+</table>
+</body>
+</html>
+""" 
+
+                        // Send the email using the email-ext plugin, including the table
+                        emailext(
+                            subject: "AMI Creation Report",
+                            body: body,
+                            mimeType: 'text/html',
+                            to: 'recipient@example.com'
+                        )
+}
+
 // Variables used in 'GetEnvironmentDetails' stage
 def environment = ""
 def account = ""
@@ -448,16 +552,15 @@ pipeline {
                         String instanceNames = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceName }.join(',')
                         String instanceIds = amiCreationRequestObj.AMIs.collect { it.instanceDetails.instanceId }.join(',')
 
-                        if (isImminentExecution) { // Puts imminent AMI Creation request for execution
+                        // Puts imminent AMI Creation request for execution
+                        if (isImminentExecution) { 
                             queueAMICreation(amiCreationRequestId, account, instanceNames, instanceIds, region, params.TicketNumber, 'Express', params.Date, params.Time, secondsFromNow)
 
                             amiCreationRequestObj.Status = 'QueuedForExecution'
                         }
                         
                         // Puts request in AMICreationDB as PendingCreation
-                        createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
-                        //}
-                        
+                        createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)                       
                         
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
                         newScheduledAMICreationObjStr += "AmiCreationRequestId: ${amiCreationRequestObj.AmiCreationRequestId}\n"
@@ -470,6 +573,9 @@ pipeline {
                         newScheduledAMICreationObjStr += "Time: ${amiCreationRequestObj.Time}\n"
                     
                         echo "${newScheduledAMICreationObjStr}"
+
+                        // SEND EMAIL
+                        sendEmailNotification(newScheduledAMICreationObjStr)
 
                     }
   
@@ -583,6 +689,11 @@ pipeline {
                                         
                                     } catch (ex) {
                                         // Handle the error without failing the build
+
+                                        def amiDetails = new AMIDetails(instance, '', '', 'Failed')
+                                        
+                                        AMIs << amiDetails
+
                                         unstable("Error in creating AMI for ${instanceId} - ${instanceName}. Moving on to next EC2 instance.")
                                     }
                                 }
@@ -604,6 +715,9 @@ pipeline {
                                     ]
 
                                     createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
+
+                                    // SEND EMAIL
+                                    sendEmailNotification(newScheduledAMICreationObjStr)
                                 }
                                 else if (params.Mode == 'Express') {
                                     
@@ -620,11 +734,11 @@ pipeline {
                                         }
                                     }
 
-                                    def amiCreationRequest = objectsList.find { it.AmiCreationRequestId == amiCreationRequestId }
+                                    def amiCreationRequestObj = objectsList.find { it.AmiCreationRequestId == amiCreationRequestId }
                                     amiCreationRequest.Status = 'AwaitingAvailability'
 
                                     AMIs.each { newAMI ->
-                                        def amiDataFromDB = amiCreationRequest.AMIs.find { it.instanceDetails.instanceId == newAMI.instanceDetails.instanceId}
+                                        def amiDataFromDB = amiCreationRequestObj.AMIs.find { it.instanceDetails.instanceId == newAMI.instanceDetails.instanceId}
 
                                         amiDataFromDB.amiId = newAMI.amiId
                                         amiDataFromDB.amiName = newAMI.amiName
@@ -638,6 +752,9 @@ pipeline {
 
                                     // Write the JSON string back to the file
                                     writeFile(file: amiCreationDBPath, text: prettyJsonStr)
+
+                                    // SEND EMAIL
+                                    sendEmailNotification(newScheduledAMICreationObjStr)
                                 }
                             }
                         }
@@ -645,115 +762,115 @@ pipeline {
                 }
             }
         }
-        stage('Send Notification') {
-            steps {
-                script {
-                    if (params.Mode == 'Scheduled') {
+//         stage('Send Notification') {
+//             steps {
+//                 script {
+//                     if (params.Mode == 'Scheduled') {
 
-                    }
-                    else {
-                        def body = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0 20px;
-        box-sizing: border-box;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 25px 0;
-        font-size: 0.9em;
-        min-width: 400px;
-        border-radius: 5px 5px 0 0;
-        overflow: hidden;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-    }
-    thead tr {
-        background-color: #005B9A; /* Deltek's blue */
-        color: #ffffff;
-        text-align: left;
-    }
-    th, td {
-        padding: 12px 15px;
-    }
-    tbody tr {
-        border-bottom: 1px solid #dddddd;
-    }
+//                     }
+//                     else {
+//                         def body = """
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8">
+// <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// <style>
+//     body {
+//         font-family: Arial, sans-serif;
+//         margin: 0;
+//         padding: 0 20px;
+//         box-sizing: border-box;
+//     }
+//     table {
+//         width: 100%;
+//         border-collapse: collapse;
+//         margin: 25px 0;
+//         font-size: 0.9em;
+//         min-width: 400px;
+//         border-radius: 5px 5px 0 0;
+//         overflow: hidden;
+//         box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+//     }
+//     thead tr {
+//         background-color: #005B9A; /* Deltek's blue */
+//         color: #ffffff;
+//         text-align: left;
+//     }
+//     th, td {
+//         padding: 12px 15px;
+//     }
+//     tbody tr {
+//         border-bottom: 1px solid #dddddd;
+//     }
 
-    tbody tr:nth-of-type(even) {
-        background-color: #f0f0f0; /* Light gray for better readability */
-    }
+//     tbody tr:nth-of-type(even) {
+//         background-color: #f0f0f0; /* Light gray for better readability */
+//     }
 
-    tbody tr:last-of-type {
-        border-bottom: 2px solid #005B9A;
-    }
+//     tbody tr:last-of-type {
+//         border-bottom: 2px solid #005B9A;
+//     }
 
-    tbody tr.active-row {
-        font-weight: bold;
-        color: #005B9A;
-    }
-    .status-message {
-        margin-top: 20px;
-        font-size: 0.9em;
-        color: #333; /* Dark gray for the message */
-    }
-</style>
-</head>
-<body>
+//     tbody tr.active-row {
+//         font-weight: bold;
+//         color: #005B9A;
+//     }
+//     .status-message {
+//         margin-top: 20px;
+//         font-size: 0.9em;
+//         color: #333; /* Dark gray for the message */
+//     }
+// </style>
+// </head>
+// <body>
 
-<p class="status-message">AMI(s) have been successfully created in AWS environment ${environment}. Reference ticket: ${TicketNumber}</p>
+// <p class="status-message">AMI(s) have been successfully created in AWS environment ${environment}. Reference ticket: ${TicketNumber}</p>
 
 
-<table>
-    <thead>
-        <tr>
-            <th>Region</th>
-            <th>Instance ID</th>
-            <th>InstanceName</th>
-            <th>AMI ID</th>
-            <th>AMI Name</th>
-        </tr>
-    </thead>
-    <tbody>
-"""
-                        createdAMIs.each { detail ->
-                            body += """
-        <tr>
-            <td>${detail.instanceDetails.region}</td>
-            <td>${detail.instanceDetails.instanceId}</td>
-            <td>${detail.instanceDetails.instanceName}</td>
-            <td>${detail.amiId}</td>
-            <td>${detail.amiName}</td>
-        </tr>
-                            """
-                        }
+// <table>
+//     <thead>
+//         <tr>
+//             <th>Region</th>
+//             <th>Instance ID</th>
+//             <th>InstanceName</th>
+//             <th>AMI ID</th>
+//             <th>AMI Name</th>
+//         </tr>
+//     </thead>
+//     <tbody>
+// """
+//                         createdAMIs.each { detail ->
+//                             body += """
+//         <tr>
+//             <td>${detail.instanceDetails.region}</td>
+//             <td>${detail.instanceDetails.instanceId}</td>
+//             <td>${detail.instanceDetails.instanceName}</td>
+//             <td>${detail.amiId}</td>
+//             <td>${detail.amiName}</td>
+//         </tr>
+//                             """
+//                         }
 
-                        // Close the table
-                        body += """
-    </tbody>
-</table>
-</body>
-</html>
-""" 
+//                         // Close the table
+//                         body += """
+//     </tbody>
+// </table>
+// </body>
+// </html>
+// """ 
 
-                        // Send the email using the email-ext plugin, including the table
-                        emailext(
-                            subject: "AMI Creation Report",
-                            body: body,
-                            mimeType: 'text/html',
-                            to: 'recipient@example.com'
-                        )
-                    }
-                }
-            }
-        }
+//                         // Send the email using the email-ext plugin, including the table
+//                         emailext(
+//                             subject: "AMI Creation Report",
+//                             body: body,
+//                             mimeType: 'text/html',
+//                             to: 'recipient@example.com'
+//                         )
+//                     }
+//                 }
+//             }
+//         }
         // stage('CleanUp') {
         //     when {
         //         expression { params.Mode == 'Express'}
