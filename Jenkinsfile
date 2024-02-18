@@ -244,7 +244,7 @@ void sendEmailNotification (Object AMICreationRequest) {
         color: #333; /* Dark gray for the message */
     }
     .fine-print {
-        margin-top: 20px;
+        margin-top: 10px;
         font-size: 0.6em;
         color: #333; /* Dark gray for the message */
     }
@@ -307,7 +307,7 @@ def environment = ""
 def account = ""
 def role = 'AMICreationRole'
 def amiCreationRequestId = ""
-def user =  env.BUILD_USER_ID ?: 'unknown'
+def user =  env.BUILD_USER_ID ?: 'Unknown'
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
