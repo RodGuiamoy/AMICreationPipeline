@@ -185,7 +185,7 @@ void sendEmailNotification (Object AMICreationRequest) {
     def message = ""
 
     if (AMICreationRequest.Status == "AwaitingAvailability") {
-        message = "AMI(s) have been successfully created in AWS environment ${AMICreationRequest.Environment}. Reference ticket: ${AMICreationRequest.TicketNumber}"
+        message = "AMI(s) have been successfully created in AWS environment ${AMICreationRequest.Environment}. Another email will be sent once the AMIs are on Available status. Reference ticket: ${AMICreationRequest.TicketNumber}"
     }
     else if ((AMICreationRequest.Status == "Scheduled") || (AMICreationRequest.Status == "QueuedForExecution")) {
         message = "An AMI creation request has been scheduled to be executed in ${AMICreationRequest.Date} ${AMICreationRequest.Time} in AWS environment ${AMICreationRequest.Environment}. Reference ticket: ${AMICreationRequest.TicketNumber}"
