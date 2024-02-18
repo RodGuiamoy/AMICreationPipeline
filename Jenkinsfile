@@ -243,11 +243,16 @@ void sendEmailNotification (Object AMICreationRequest) {
         font-size: 0.9em;
         color: #333; /* Dark gray for the message */
     }
+    .ami-creation-request-id {
+        margin-top: 20px;
+        font-size: 0.5em;
+        color: #333; /* Dark gray for the message */
+    }
 </style>
 </head>
 <body>
 
-<p class="status-message">${message}</p> -->
+<p class="status-message">${message}</p>
 
 
 <table>
@@ -280,6 +285,9 @@ void sendEmailNotification (Object AMICreationRequest) {
                         body += """
     </tbody>
 </table>
+
+<p class="ami-creation-request-id">AMI Creation Request Id: ${AMICreationRequest.AmiCreationRequestId}</p>
+
 </body>
 </html>
 """ 
