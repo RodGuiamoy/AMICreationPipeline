@@ -243,9 +243,9 @@ void sendEmailNotification (Object AMICreationRequest) {
         font-size: 0.9em;
         color: #333; /* Dark gray for the message */
     }
-    .ami-creation-request-id {
+    .fine-print {
         margin-top: 20px;
-        font-size: 0.5em;
+        font-size: 0.6em;
         color: #333; /* Dark gray for the message */
     }
 </style>
@@ -286,7 +286,8 @@ void sendEmailNotification (Object AMICreationRequest) {
     </tbody>
 </table>
 
-<p class="ami-creation-request-id">AMI Creation Request Id: ${AMICreationRequest.AmiCreationRequestId}</p>
+<p class="fine-print">AMI Creation Request Id: ${AMICreationRequest.AmiCreationRequestId}</p>
+<p class="fine-print">Requester: ${AMICreationRequest.User}</p>
 
 </body>
 </html>
@@ -306,6 +307,7 @@ def environment = ""
 def account = ""
 def role = 'AMICreationRole'
 def amiCreationRequestId = ""
+def user =  env.BUILD_USER_ID ?: 'unknown'
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
@@ -563,7 +565,7 @@ pipeline {
                             'Date': params.Date,
                             'Time': params.Time,
                             'Mode': 'Express',
-                            
+                            'User': user                            
                         ]
 
                         
@@ -583,12 +585,14 @@ pipeline {
                         def newScheduledAMICreationObjStr = "Successfully scheduled AMI Creation:\n"
                         newScheduledAMICreationObjStr += "AmiCreationRequestId: ${amiCreationRequestObj.AmiCreationRequestId}\n"
                         newScheduledAMICreationObjStr += "Account: ${amiCreationRequestObj.Account}\n"
+                        newScheduledAMICreationObjStr += "Environment: ${amiCreationRequestObj.Environment}\n"
                         newScheduledAMICreationObjStr += "Region: ${amiCreationRequestObj.Region}\n"
                         newScheduledAMICreationObjStr += "InstanceNames: ${instanceNames}\n"
                         newScheduledAMICreationObjStr += "InstanceIDs: ${instanceIds}\n"
                         newScheduledAMICreationObjStr += "TicketNumber: ${amiCreationRequestObj.TicketNumber}\n"
                         newScheduledAMICreationObjStr += "Date: ${amiCreationRequestObj.Date}\n"
                         newScheduledAMICreationObjStr += "Time: ${amiCreationRequestObj.Time}\n"
+                        newScheduledAMICreationObjStr += "User: ${amiCreationRequestObj.User}\n"
                     
                         echo "${newScheduledAMICreationObjStr}"
 
@@ -731,6 +735,7 @@ pipeline {
                                         // 'Date': params.Date,
                                         // 'Time': params.Time,
                                         'Mode': params.Mode,
+                                        'User': user
                                     ]
 
                                     createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
