@@ -307,7 +307,7 @@ def environment = ""
 def account = ""
 def role = 'AMICreationRole'
 def amiCreationRequestId = ""
-def user =  env.BUILD_USER_ID ?: 'Unknown'
+def user =  env.BUILD_USER ?: 'Unknown'
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
