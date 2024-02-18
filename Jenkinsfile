@@ -188,7 +188,7 @@ void sendEmailNotification (Object AMICreationRequest) {
         message = "AMI(s) have been successfully created in AWS environment ${AMICreationRequest.Environment}. Reference ticket: ${AMICreationRequest.TicketNumber}"
     }
     else if ((AMICreationRequest.Status == "Scheduled") || (AMICreationRequest.Status == "QueuedForExecution")) {
-        message = "AMI creation request has been scheduled to be executed in ${AMICreationRequest.Date} ${AMICreationRequest.Time} in AWS environment ${AMICreationRequest.Environment}. Reference ticket: ${AMICreationRequest.TicketNumber}"
+        message = "An AMI creation request has been scheduled to be executed in ${AMICreationRequest.Date} ${AMICreationRequest.Time} in AWS environment ${AMICreationRequest.Environment}. Reference ticket: ${AMICreationRequest.TicketNumber}"
     }
     
     def body = """
@@ -759,7 +759,7 @@ pipeline {
                                     }
 
                                     def amiCreationRequestObj = objectsList.find { it.AmiCreationRequestId == amiCreationRequestId }
-                                    amiCreationRequest.Status = 'AwaitingAvailability'
+                                    amiCreationRequestObj.Status = 'AwaitingAvailability'
 
                                     AMIs.each { newAMI ->
                                         def amiDataFromDB = amiCreationRequestObj.AMIs.find { it.instanceDetails.instanceId == newAMI.instanceDetails.instanceId}
