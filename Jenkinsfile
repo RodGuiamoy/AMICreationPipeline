@@ -215,7 +215,7 @@ void sendEmailNotification (Object AMICreationRequest) {
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
     }
     thead tr {
-        background-color: #005B9A; /* Deltek's blue */
+        background-color: #005B9A;
         color: #ffffff;
         text-align: left;
     }
