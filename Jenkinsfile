@@ -575,7 +575,7 @@ pipeline {
                         echo "${newScheduledAMICreationObjStr}"
 
                         // SEND EMAIL
-                        sendEmailNotification(newScheduledAMICreationObjStr)
+                        sendEmailNotification(amiCreationRequestObj)
 
                     }
   
@@ -717,7 +717,7 @@ pipeline {
                                     createAMICreationRequest(amiCreationRequestObj, amiCreationDBPath)
 
                                     // SEND EMAIL
-                                    sendEmailNotification(newScheduledAMICreationObjStr)
+                                    sendEmailNotification(amiCreationRequestObj)
                                 }
                                 else if (params.Mode == 'Express') {
                                     
@@ -754,7 +754,7 @@ pipeline {
                                     writeFile(file: amiCreationDBPath, text: prettyJsonStr)
 
                                     // SEND EMAIL
-                                    sendEmailNotification(newScheduledAMICreationObjStr)
+                                    sendEmailNotification(amiCreationRequestObj)
                                 }
                             }
                         }
