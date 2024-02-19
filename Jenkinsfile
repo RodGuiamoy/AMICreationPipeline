@@ -295,7 +295,7 @@ void sendEmailNotification (Object AMICreationRequest) {
 
                         // Send the email using the email-ext plugin, including the table
                         emailext(
-                            subject: "AMI Creation Report",
+                            subject: "${AMICreationRequest.TicketNumber} - AMI Creation Report",
                             body: body,
                             mimeType: 'text/html',
                             to: 'recipient@example.com'
