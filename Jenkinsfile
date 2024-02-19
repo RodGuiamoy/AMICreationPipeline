@@ -307,7 +307,7 @@ def environment = ""
 def account = ""
 def role = 'AMICreationRole'
 def amiCreationRequestId = ""
-def user =  currentBuild.getBuildCauses()[0].userId
+
 
 // Variables used in 'ValidateEC2' stage
 def validInstances = []
@@ -553,6 +553,7 @@ pipeline {
                             AMIs << amiDetails
 
                         }
+                        def user =  currentBuild.getBuildCauses()[0].userId
 
                         def amiCreationRequestObj = [
                             'AmiCreationRequestId': amiCreationRequestId,
@@ -723,6 +724,8 @@ pipeline {
                                 if (params.Mode == 'On-Demand') {
                                     amiCreationRequestId = UUID.randomUUID()
                                     amiCreationRequestId = amiCreationRequestId.toString()
+
+                                    def user = currentBuild.getBuildCauses()[0].userId
 
                                     def amiCreationRequestObj = [
                                         'AmiCreationRequestId': amiCreationRequestId,
